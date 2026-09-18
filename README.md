@@ -1,4 +1,4 @@
-# 🧠 Manas Mitra 2.0 
+# 🧠 Manas Mitra 
 
 > **AI-Powered Mental Wellness & Habit-Building Platform**  
 > Helping users navigate mental health challenges, build positive lifestyle habits, connect with interest communities, and access supportive AI consultation.
