@@ -45,8 +45,8 @@
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/jayank1824/manas-mitra-2.0.git
-cd manas-mitra-2.0
+git clone https://github.com/jayank1824/Manas-Mitra---AI-driven-Mental-Wellness-Platform.git
+cd Manas-Mitra---AI-driven-Mental-Wellness-Platform
 ```
 
 ### 2. Create and activate a virtual environment
@@ -92,19 +92,18 @@ Open your browser at `http://localhost:8000`.
 ## 🌐 Deploying to Render
 
 ### Option A: 1-Click Blueprint Deploy (Recommended)
-1. Push this repository to GitHub under `https://github.com/jayank1824/manas-mitra-2.0`.
-2. Log into [Render Dashboard](https://dashboard.render.com/).
-3. Click **New +** -> **Blueprint**.
-4. Select your `manas-mitra-2.0` repository.
-5. Render will automatically detect `render.yaml` and configure the web service.
-6. Add your `GEMINI_API_KEY` under Environment Variables in the Render dashboard.
-7. Click **Apply**!
+1. In [Render Dashboard](https://dashboard.render.com/), click **New +** -> **Blueprint**.
+2. Select your `Manas-Mitra---AI-driven-Mental-Wellness-Platform` repository.
+3. Render will automatically detect `render.yaml` and configure the web service.
+4. Add your `GEMINI_API_KEY` under Environment Variables in the Render dashboard.
+5. Click **Apply**!
 
 ### Option B: Manual Web Service Setup on Render
 1. Go to [Render Dashboard](https://dashboard.render.com/) -> **New +** -> **Web Service**.
-2. Connect your GitHub repository `jayank1824/manas-mitra-2.0`.
+2. Connect your GitHub repository `jayank1824/Manas-Mitra---AI-driven-Mental-Wellness-Platform`.
 3. Configure the following settings:
-   - **Environment:** `Python 3`
+   - **Name:** `manas-mitra`
+   - **Runtime:** `Python 3`
    - **Build Command:** `./build.sh` (or `pip install -r requirements.txt && python -m data.seed_data`)
    - **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 4. Under **Environment Variables**, add:
@@ -112,6 +111,7 @@ Open your browser at `http://localhost:8000`.
    - `SECRET_KEY`: *(Generate a secure random string)*
    - `GEMINI_API_KEY`: *(Your Google Gemini API Key)*
 5. Click **Create Web Service**.
+
 
 ---
 
