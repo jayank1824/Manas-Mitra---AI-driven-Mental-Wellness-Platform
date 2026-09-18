@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}Zen Garden - Manas Mitra{% endblock %}
+
+{% block extra_head %}
+<style>
+    #zen-canvas {
+        background: radial-gradient(circle at 50% 50%, #fef3c7, #fde68a, #d97706);
+        box-shadow: inset 0 0 30px rgba(180, 83, 9, 0.25), 0 10px 25px rgba(0, 0, 0, 0.15);
+        cursor: crosshair;
+        border-radius: 1.5rem;
+    }
+
+    .element-btn {
+        transition: all 0.2s ease;
+    }
+    .element-btn.active {
+        transform: scale(1.1);
+        border-color: #0d9488;
+        background-color: rgba(13, 148, 136, 0.15);
+    }
+
+    @keyframes pulseGlow {
+        0%, 100% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(1.25); opacity: 0.7; }
+    }
+
+    .breath-ring {
+        animation: pulseGlow 6s ease-in-out infinite;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4" x-data="zenGardenGame()">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold text-teal-800 flex items-center justify-center gap-3">
+            <span>🪨</span> Zen Sand Garden
+        </h1>
+        <p class="text-teal-600 mt-2">Rake sand patterns, place peaceful elements, and immerse in a meditative soundscape.</p>
+    </div>
+
+    <!-- Main Game Board -->
+    <div class="bg-gradient-to-br from-amber-50 via-teal-50 to-emerald-50 rounded-3xl p-6 sm:p-8 shadow-xl border border-teal-100 space-y-6">
+        
+        <!-- Top Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-teal-100 shadow-sm">
+            
+            <!-- Tool Selection -->
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-teal-800 uppercase tracking-wider">Tool:</span>
+                <button @click="tool = 'rake'" :class="tool === 'rake' ? 'bg-teal-600 text-white shadow-md' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'" class="px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-1">
+                    <span>🌾</span> Sand Rake
+                </button>
+                <button @click="tool = 'place'" :class="tool === 'place' ? 'bg-teal-600 text-white shadow-md' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'" class="px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-1">
+                    <span>🪨</span> Place Element
+                </button>
+            </div>
+
+            <!-- Rake Width Selector -->
+            <div x-show="tool === 'rake'" class="flex items-center gap-2 text-sm text-teal-800">
+                <span class="text-xs font-semibold">Rake Width:</span>
+                <button @click="rakeSize = 15" :class="rakeSize === 15 ? 'bg-teal-600 text-white' : 'bg-teal-50 text-teal-700'" class="px-2.5 py-1 rounded-lg text-xs font-bold">Thin</button>
+                <button @click="rakeSize = 30" :class="rakeSize === 30 ? 'bg-teal-600 text-white' : 'bg-teal-50 text-teal-700'" class="px-2.5 py-1 rounded-lg text-xs font-bold">Medium</button>
+                <button @click="rakeSize = 50" :class="rakeSize === 50 ? 'bg-teal-600 text-white' : 'bg-teal-50 text-teal-700'" class="px-2.5 py-1 rounded-lg text-xs font-bold">Wide</button>
+            </div>
+
+            <!-- Zen Soundscape Toggle -->
+            <button @click="toggleAmbientSound()" :class="soundActive ? 'bg-emerald-600 text-white shadow-md' : 'bg-white border border-teal-200 text-teal-700 hover:bg-teal-50'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2">
+                <span x-text="soundActive ? '🔊 Ambient Chimes Active' : '🔈 Play Ambient Soundscape'"></span>
+            </button>
+        </div>
+
+        <!-- Zen Elements Palette (Shown when tool === 'place') -->
+        <div x-show="tool === 'place'" class="flex flex-wrap items-center gap-3 bg-white/90 p-4 rounded-2xl border border-teal-100">
+            <span class="text-xs font-bold text-teal-800 uppercase tracking-wider">Select Item:</span>
+            
+            <template x-for="item in zenElements" :key="item.id">
+                <button @click="selectedElement = item.id" 
+                        class="element-btn flex items-center gap-1.5 border border-teal-200 bg-white px-3 py-1.5 rounded-xl text-sm font-medium hover:bg-teal-50"
+                        :class="selectedElement === item.id ? 'active' : ''">
+                    <span class="text-xl" x-text="item.icon"></span>
+                    <span x-text="item.name"></span>
+                </button>
+            </template>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="relative flex justify-center items-center overflow-hidden rounded-2xl">
+            <canvas id="zen-canvas" width="750" height="450" class="w-full max-w-full touch-none"></canvas>
+
+            <!-- Mindful Breathing Ring Overlay -->
+            <div x-show="breathingGuide" class="absolute pointer-events-none flex items-center justify-center">
+                <div class="breath-ring w-48 h-48 rounded-full border-4 border-teal-500/60 bg-teal-400/20 backdrop-blur-xs flex items-center justify-center">
+                    <span class="text-teal-900 font-bold text-sm bg-white/80 px-3 py-1 rounded-full shadow-sm">Breathe with the Waves</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+            <div class="flex items-center gap-3">
+                <button @click="resetSand()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1">
+                    <span>🧹</span> Smooth Out Sand
+                </button>
+                <button @click="clearPlacedElements()" class="bg-stone-200 hover:bg-stone-300 text-stone-800 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1">
+                    <span>🗑️</span> Remove Items
+                </button>
+                <button @click="breathingGuide = !breathingGuide" :class="breathingGuide ? 'bg-teal-600 text-white' : 'bg-white border border-teal-200 text-teal-700'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+                    <span>🫁</span> Breathing Guide Overlay
+                </button>
+            </div>
+
+            <button @click="finishSession()" class="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all">
+                Save & Finish Session ✨
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div x-show="showResults" class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto text-center border border-teal-100 mt-8" style="display: none;">
+        <div class="text-6xl mb-4 animate-bounce">🪨</div>
+        <h2 class="text-2xl font-bold text-teal-900 mb-2">Mindful Moment Complete</h2>
+        <p class="text-gray-600 mb-6">You've cultivated tranquility in your Zen Garden.</p>
+
+        <div class="bg-teal-50 p-4 rounded-xl mb-6">
+            <div class="text-xs text-teal-600 font-semibold uppercase">Zen Mind Score</div>
+            <div class="text-3xl font-extrabold text-teal-900 mt-1" x-text="score + ' pts'"></div>
+        </div>
+
+        <div class="space-y-3">
+            <button @click="showResults = false" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all">
+                Continue Raking Garden
+            </button>
+            <a href="/games" class="block w-full bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold py-3 px-4 rounded-xl transition-all">
+                Back to All Games
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/games/game-utils.js"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('zenGardenGame', () => ({
+            tool: 'rake', // 'rake' or 'place'
+            rakeSize: 30,
+            selectedElement: 'river_rock',
+            soundActive: false,
+            breathingGuide: false,
+            showResults: false,
+            
+            score: 0,
+            startTime: Date.now(),
+            
+            canvas: null,
+            ctx: null,
+            isDrawing: false,
+            lastX: 0,
+            lastY: 0,
+            placedItems: [],
+
+            zenElements: [
+                { id: 'river_rock', name: 'River Pebble', icon: '🪨', size: 36 },
+                { id: 'bonsai_leaf', name: 'Bonsai Leaf', icon: '🍃', size: 30 },
+                { id: 'cherry_blossom', name: 'Blossom', icon: '🌸', size: 32 },
+                { id: 'bamboo', name: 'Bamboo', icon: '🎍', size: 40 },
+                { id: 'lotus', name: 'Lotus Flower', icon: '🪷', size: 36 }
+            ],
+
+            audioCtx: null,
+            ambientOsc1: null,
+            ambientOsc2: null,
+
+            init() {
+                this.$nextTick(() => {
+                    this.initCanvas();
+                });
+            },
+
+            initCanvas() {
+                this.canvas = document.getElementById('zen-canvas');
+                if (!this.canvas) return;
+
+                this.ctx = this.canvas.getContext('2d');
+                this.resetSand();
+
+                // Mouse / Touch Event Listeners
+                this.canvas.addEventListener('mousedown', (e) => this.handleStart(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMove(e));
+                this.canvas.addEventListener('mouseup', () => this.handleEnd());
+                this.canvas.addEventListener('mouseleave', () => this.handleEnd());
+
+                this.canvas.addEventListener('touchstart', (e) => this.handleStart(e.touches[0]));
+                this.canvas.addEventListener('touchmove', (e) => this.handleMove(e.touches[0]));
+                this.canvas.addEventListener('touchend', () => this.handleEnd());
+            },
+
+            resetSand() {
+                if (!this.ctx) return;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+
+                // Base Warm Sand Color
+                const grad = this.ctx.createRadialGradient(width/2, height/2, 50, width/2, height/2, width/1.2);
+                grad.addColorStop(0, '#fef3c7');
+                grad.addColorStop(0.6, '#fde68a');
+                grad.addColorStop(1, '#f59e0b');
+
+                this.ctx.fillStyle = grad;
+                this.ctx.fillRect(0, 0, width, height);
+
+                // Subtle organic texture
+                this.ctx.fillStyle = 'rgba(217, 119, 6, 0.05)';
+                for (let i = 0; i < 400; i++) {
+                    const x = Math.random() * width;
+                    const y = Math.random() * height;
+                    this.ctx.fillRect(x, y, 2, 2);
+                }
+
+                // Redraw Placed Items
+                this.redrawPlacedItems();
+            },
+
+            getCanvasPos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            },
+
+            handleStart(e) {
+                const pos = this.getCanvasPos(e);
+                this.isDrawing = true;
+                this.lastX = pos.x;
+                this.lastY = pos.y;
+
+                if (this.tool === 'place') {
+                    this.placeItem(pos.x, pos.y);
+                }
+            },
+
+            handleMove(e) {
+                if (!this.isDrawing || this.tool !== 'rake') return;
+                const pos = this.getCanvasPos(e);
+
+                // Draw Sand Rake Groove
+                this.ctx.beginPath();
+                this.ctx.strokeStyle = 'rgba(180, 83, 9, 0.35)';
+                this.ctx.lineWidth = this.rakeSize;
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
+
+                this.ctx.moveTo(this.lastX, this.lastY);
+                this.ctx.lineTo(pos.x, pos.y);
+                this.ctx.stroke();
+
+                // Inner highlight line for 3D sand groove effect
+                this.ctx.beginPath();
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                this.ctx.lineWidth = Math.max(2, this.rakeSize / 5);
+                this.ctx.moveTo(this.lastX - 2, this.lastY - 2);
+                this.ctx.lineTo(pos.x - 2, pos.y - 2);
+                this.ctx.stroke();
+
+                this.lastX = pos.x;
+                this.lastY = pos.y;
+                this.score += 1;
+            },
+
+            handleEnd() {
+                this.isDrawing = false;
+            },
+
+            placeItem(x, y) {
+                const elementObj = this.zenElements.find(item => item.id === this.selectedElement);
+                if (!elementObj) return;
+
+                this.placedItems.push({
+                    x: x,
+                    y: y,
+                    icon: elementObj.icon,
+                    size: elementObj.size
+                });
+
+                this.drawSingleItem(x, y, elementObj.icon, elementObj.size);
+                this.score += 25;
+            },
+
+            drawSingleItem(x, y, icon, size) {
+                this.ctx.font = `${size}px sans-serif`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+
+                // Soft shadow behind placed pebbles/items
+                this.ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+                this.ctx.shadowBlur = 8;
+                this.ctx.shadowOffsetY = 4;
+
+                this.ctx.fillText(icon, x, y);
+
+                // Reset shadow
+                this.ctx.shadowColor = 'transparent';
+            },
+
+            redrawPlacedItems() {
+                this.placedItems.forEach(item => {
+                    this.drawSingleItem(item.x, item.y, item.icon, item.size);
+                });
+            },
+
+            clearPlacedElements() {
+                this.placedItems = [];
+                this.resetSand();
+            },
+
+            toggleAmbientSound() {
+                this.soundActive = !this.soundActive;
+
+                if (this.soundActive) {
+                    try {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (!this.audioCtx && AudioContext) {
+                            this.audioCtx = new AudioContext();
+                        }
+                        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                            this.audioCtx.resume();
+                        }
+
+                        // Soothing Binaural Drone
+                        this.ambientOsc1 = this.audioCtx.createOscillator();
+                        this.ambientOsc2 = this.audioCtx.createOscillator();
+                        const gain = this.audioCtx.createGain();
+
+                        this.ambientOsc1.type = 'sine';
+                        this.ambientOsc1.frequency.value = 174; // Solfeggio 174 Hz (Pain & Stress Relief)
+
+                        this.ambientOsc2.type = 'triangle';
+                        this.ambientOsc2.frequency.value = 178;
+
+                        gain.gain.value = 0.08;
+
+                        this.ambientOsc1.connect(gain);
+                        this.ambientOsc2.connect(gain);
+                        gain.connect(this.audioCtx.destination);
+
+                        this.ambientOsc1.start();
+                        this.ambientOsc2.start();
+                    } catch (e) {
+                        console.log('Audio error:', e);
+                    }
+                } else {
+                    if (this.ambientOsc1) this.ambientOsc1.stop();
+                    if (this.ambientOsc2) this.ambientOsc2.stop();
+                }
+            },
+
+            async finishSession() {
+                if (this.soundActive) this.toggleAmbientSound();
+
+                const durationSeconds = Math.round((Date.now() - this.startTime) / 1000);
+                this.score = Math.max(50, Math.min(500, Math.round(this.score / 2)));
+                this.showResults = true;
+
+                if (typeof window.saveGameScore === 'function' && this.score > 0) {
+                    await window.saveGameScore('zen_garden', this.score, durationSeconds);
+                }
+                if (typeof window.triggerConfetti === 'function') {
+                    window.triggerConfetti();
+                }
+            }
+        }));
+    });
+</script>
+{% endblock %}

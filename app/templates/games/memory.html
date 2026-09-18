@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Memory Match - Manas Mitra{% endblock %}
+
+{% block extra_head %}
+<style>
+    .perspective-1000 {
+        perspective: 1000px;
+    }
+    .transform-style-3d {
+        transform-style: preserve-3d;
+    }
+    .backface-hidden {
+        backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+        transform: rotateY(180deg);
+    }
+    .card-transition {
+        transition: transform 0.5s ease-in-out;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4" x-data="memoryGame()">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-teal-800">🧠 Memory Match</h1>
+        <p class="text-teal-600 mt-2">Find the matching pairs to sharpen your focus</p>
+    </div>
+
+    <!-- Setup -->
+    <div x-show="!isPlaying && !showResults" class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto text-center border border-teal-100">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Select Difficulty</h2>
+        <div class="flex flex-col gap-4 mb-6">
+            <button @click="startGame('easy')" class="bg-teal-50 text-teal-700 hover:bg-teal-100 py-3 px-4 rounded-lg font-medium transition-colors">Easy (12 Cards)</button>
+            <button @click="startGame('medium')" class="bg-teal-50 text-teal-700 hover:bg-teal-100 py-3 px-4 rounded-lg font-medium transition-colors">Medium (16 Cards)</button>
+            <button @click="startGame('hard')" class="bg-teal-50 text-teal-700 hover:bg-teal-100 py-3 px-4 rounded-lg font-medium transition-colors">Hard (24 Cards)</button>
+        </div>
+    </div>
+
+    <!-- Game Board -->
+    <div x-show="isPlaying" class="bg-white rounded-xl shadow-lg p-6 border border-teal-100" style="display: none;">
+        <div class="flex justify-between items-center mb-6 text-teal-800 font-semibold text-lg bg-teal-50 p-4 rounded-lg">
+            <div>Moves: <span x-text="moves"></span></div>
+            <div>Time: <span x-text="formatTime(seconds)"></span></div>
+            <button @click="quitGame()" class="text-sm bg-white px-3 py-1 rounded shadow text-teal-600 hover:bg-teal-50 transition-colors">Quit</button>
+        </div>
+
+        <div class="grid gap-4 mx-auto" :class="gridColsClass" style="max-width: 800px;">
+            <template x-for="(card, index) in cards" :key="card.id">
+                <div class="perspective-1000 aspect-square cursor-pointer" @click="flipCard(index)">
+                    <div class="relative w-full h-full transform-style-3d card-transition rounded-xl shadow-sm" 
+                         :class="{ 'rotate-y-180': card.isFlipped || card.isMatched, 'shadow-md shadow-teal-300': card.isMatched }">
+                        <!-- Card Back (Hidden when flipped) -->
+                        <div class="absolute w-full h-full backface-hidden bg-gradient-to-br from-teal-300 to-mint-400 rounded-xl flex items-center justify-center border-2 border-white shadow-inner">
+                            <div class="w-2/3 h-2/3 border-2 border-white/50 rounded-lg flex items-center justify-center">
+                                <span class="text-white/70 text-2xl">🌱</span>
+                            </div>
+                        </div>
+                        <!-- Card Front (Shown when flipped) -->
+                        <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-white rounded-xl flex items-center justify-center border-2 border-teal-200 shadow-inner text-4xl">
+                            <span x-text="card.emoji"></span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div x-show="showResults" class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto text-center border border-teal-100" style="display: none;">
+        <div class="text-6xl mb-4">🎉</div>
+        <h2 class="text-2xl font-bold text-teal-900 mb-2">Congratulations!</h2>
+        <p class="text-gray-600 mb-6">You've matched all the pairs.</p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-teal-50 p-3 rounded-lg">
+                <div class="text-sm text-teal-600">Moves</div>
+                <div class="text-xl font-bold text-teal-900" x-text="moves"></div>
+            </div>
+            <div class="bg-teal-50 p-3 rounded-lg">
+                <div class="text-sm text-teal-600">Time</div>
+                <div class="text-xl font-bold text-teal-900" x-text="formatTime(seconds)"></div>
+            </div>
+        </div>
+        
+        <div class="text-2xl font-bold text-teal-700 mb-8 bg-teal-100 p-4 rounded-xl">
+            Score: <span x-text="score"></span>
+        </div>
+
+        <button @click="showResults = false" class="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">
+            Play Again
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/games/game-utils.js"></script>
+<script>
+    const EMOJIS = ['🌸', '🌿', '🦋', '🌊', '☀️', '🌈', '🍃', '🌺', '🕊️', '🌻', '🧘', '💧', '🌙', '⭐', '🎵', '🌷', '🐚', '🌾'];
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('memoryGame', () => ({
+            isPlaying: false,
+            showResults: false,
+            difficulty: 'easy',
+            gridColsClass: 'grid-cols-4',
+            
+            cards: [],
+            moves: 0,
+            seconds: 0,
+            score: 0,
+            matches: 0,
+            totalPairs: 0,
+            
+            timer: null,
+            flippedIndices: [],
+            isProcessing: false,
+
+            formatTime(s) {
+                if (typeof window.formatTime === 'function') return window.formatTime(s);
+                return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+            },
+
+            startGame(diff) {
+                this.difficulty = diff;
+                let pairsCount = 6; // easy (12 cards)
+                this.gridColsClass = 'grid-cols-3 sm:grid-cols-4';
+                
+                if (diff === 'medium') {
+                    pairsCount = 8; // 16 cards
+                    this.gridColsClass = 'grid-cols-4';
+                } else if (diff === 'hard') {
+                    pairsCount = 12; // 24 cards
+                    this.gridColsClass = 'grid-cols-4 sm:grid-cols-6';
+                }
+                
+                this.totalPairs = pairsCount;
+                this.generateCards(pairsCount);
+                
+                this.moves = 0;
+                this.seconds = 0;
+                this.matches = 0;
+                this.score = 0;
+                this.flippedIndices = [];
+                this.isProcessing = false;
+                
+                this.isPlaying = true;
+                this.showResults = false;
+                
+                clearInterval(this.timer);
+                this.timer = setInterval(() => { this.seconds++; }, 1000);
+            },
+
+            generateCards(pairsCount) {
+                // Select random emojis for this game
+                const selectedEmojis = [...EMOJIS].sort(() => 0.5 - Math.random()).slice(0, pairsCount);
+                // Create pairs
+                const gameEmojis = [...selectedEmojis, ...selectedEmojis];
+                // Shuffle
+                gameEmojis.sort(() => 0.5 - Math.random());
+                
+                this.cards = gameEmojis.map((emoji, index) => ({
+                    id: index,
+                    emoji: emoji,
+                    isFlipped: false,
+                    isMatched: false
+                }));
+            },
+
+            flipCard(index) {
+                if (this.isProcessing) return;
+                const card = this.cards[index];
+                if (card.isFlipped || card.isMatched) return;
+
+                card.isFlipped = true;
+                this.flippedIndices.push(index);
+
+                if (this.flippedIndices.length === 2) {
+                    this.moves++;
+                    this.checkMatch();
+                }
+            },
+
+            checkMatch() {
+                this.isProcessing = true;
+                const [idx1, idx2] = this.flippedIndices;
+                const match = this.cards[idx1].emoji === this.cards[idx2].emoji;
+
+                setTimeout(() => {
+                    if (match) {
+                        this.cards[idx1].isMatched = true;
+                        this.cards[idx2].isMatched = true;
+                        this.matches++;
+                        if (this.matches === this.totalPairs) {
+                            this.endGame();
+                        }
+                    } else {
+                        this.cards[idx1].isFlipped = false;
+                        this.cards[idx2].isFlipped = false;
+                    }
+                    this.flippedIndices = [];
+                    this.isProcessing = false;
+                }, 1000);
+            },
+
+            async endGame() {
+                clearInterval(this.timer);
+                this.isPlaying = false;
+                
+                // Calculate score
+                let baseScore = this.totalPairs * 100;
+                let penalty = (this.moves * 10) + (this.seconds * 2);
+                this.score = Math.max(baseScore - penalty, 100);
+                
+                this.showResults = true;
+                
+                if (typeof window.saveGameScore === 'function') {
+                    await window.saveGameScore('memory', this.score, this.seconds);
+                }
+                if (typeof window.triggerConfetti === 'function') {
+                    window.triggerConfetti();
+                }
+            },
+
+            quitGame() {
+                clearInterval(this.timer);
+                this.isPlaying = false;
+            }
+        }));
+    });
+</script>
+{% endblock %}

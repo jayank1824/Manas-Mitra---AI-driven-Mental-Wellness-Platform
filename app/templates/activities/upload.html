@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Proof | Manas Mitra{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-12">
+    <div class="mb-6">
+        <a href="/activities/" class="text-teal-600 hover:text-teal-800 font-medium flex items-center">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to Activities
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-teal-800 mb-2">Upload Proof 📸</h1>
+            <p class="text-gray-600">Show us your dedication! Upload a photo or short video.</p>
+        </div>
+
+        <form action="/activities/upload-proof" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Select Activity</label>
+                <select name="streak_id" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <option value="">-- Select an activity streak --</option>
+                    {% for streak in user_streaks %}
+                    <option value="{{ streak.id }}">Activity Streak #{{ streak.id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="border-2 border-dashed border-teal-300 rounded-2xl p-10 text-center bg-teal-50 hover:bg-teal-100 transition cursor-pointer relative">
+                <input type="file" name="file" accept="image/jpeg,image/png,video/mp4,video/quicktime" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="fileUpload">
+                
+                <div class="pointer-events-none">
+                    <svg class="mx-auto h-12 w-12 text-teal-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <p class="text-lg font-medium text-teal-800 mb-1">Drag and drop your file here</p>
+                    <p class="text-sm text-gray-500">or click to browse</p>
+                </div>
+            </div>
+            
+            <div class="text-xs text-gray-500 text-center bg-gray-50 py-2 rounded-lg">
+                Accepted formats: JPG, PNG, MP4, MOV. Max file size: 50MB.
+            </div>
+
+            <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl shadow-md transition text-lg flex justify-center items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Upload and Complete Day
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

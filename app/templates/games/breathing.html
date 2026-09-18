@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Breathing Bubble - Manas Mitra{% endblock %}
+
+{% block extra_head %}
+<style>
+    .bubble-container {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .bubble {
+        background: radial-gradient(circle at 30% 30%, rgba(132, 225, 203, 0.9), rgba(56, 178, 172, 0.7));
+        border-radius: 50%;
+        width: 100px;
+        height: 100px;
+        transition: all ease-in-out;
+        box-shadow: 0 0 40px rgba(56, 178, 172, 0.5), inset 0 0 20px rgba(255,255,255,0.5);
+    }
+    
+    .bubble.inhale {
+        width: 300px;
+        height: 300px;
+        transition-duration: 4s;
+    }
+    
+    .bubble.hold {
+        width: 300px;
+        height: 300px;
+        transition-duration: 7s;
+    }
+    
+    .bubble.exhale {
+        width: 100px;
+        height: 100px;
+        transition-duration: 8s;
+    }
+
+    .instruction-text {
+        position: absolute;
+        color: white;
+        font-weight: bold;
+        font-size: 1.5rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 10;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 px-4" x-data="breathingGame()">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-teal-800">🫁 Breathing Bubble</h1>
+        <p class="text-teal-600 mt-2">4-7-8 Breathing Technique for Relaxation</p>
+    </div>
+
+    <!-- Setup Screen -->
+    <div x-show="!isPlaying && !showResults" class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto text-center border border-teal-100">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Select Duration</h2>
+        <div class="flex flex-col gap-4 mb-6">
+            <button @click="setDuration(120)" :class="duration === 120 ? 'bg-teal-500 text-white' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'" class="py-3 px-4 rounded-lg font-medium transition-colors">2 Minutes (Quick Calm)</button>
+            <button @click="setDuration(300)" :class="duration === 300 ? 'bg-teal-500 text-white' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'" class="py-3 px-4 rounded-lg font-medium transition-colors">5 Minutes (Deep Relaxation)</button>
+            <button @click="setDuration(600)" :class="duration === 600 ? 'bg-teal-500 text-white' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'" class="py-3 px-4 rounded-lg font-medium transition-colors">10 Minutes (Sleep Prep)</button>
+        </div>
+        <button @click="startGame()" class="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors text-lg">
+            Start Breathing
+        </button>
+    </div>
+
+    <!-- Play Screen -->
+    <div x-show="isPlaying" class="bg-teal-900 rounded-3xl p-8 relative overflow-hidden shadow-2xl" style="min-height: 500px;">
+        <div class="absolute inset-0 opacity-20 bg-gradient-to-br from-teal-400 to-blue-500 mix-blend-overlay"></div>
+        
+        <div class="relative z-10 flex flex-col items-center justify-between h-full min-h-[400px]">
+            <div class="w-full flex justify-between text-teal-100 font-medium">
+                <div>Time: <span x-text="formatTime(timeLeft)"></span></div>
+                <div>Cycles: <span x-text="cycles"></span></div>
+            </div>
+
+            <div class="flex-grow flex items-center justify-center w-full">
+                <div class="bubble-container">
+                    <div class="bubble" :class="phaseClass"></div>
+                    <div class="instruction-text">
+                        <div x-text="instruction"></div>
+                        <div class="text-3xl mt-2" x-text="phaseTimer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex gap-4">
+                <button @click="stopGame()" class="bg-white/20 hover:bg-white/30 text-white px-6 py-2 rounded-full backdrop-blur-sm transition-colors">
+                    End Session
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div x-show="showResults" class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto text-center border border-teal-100" style="display: none;">
+        <div class="text-6xl mb-4">🌟</div>
+        <h2 class="text-2xl font-bold text-teal-900 mb-2">Session Complete</h2>
+        <p class="text-gray-600 mb-6">You've taken a wonderful step towards mindfulness.</p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-teal-50 p-4 rounded-lg">
+                <div class="text-sm text-teal-600 font-medium">Time Spent</div>
+                <div class="text-2xl font-bold text-teal-900" x-text="formatTime(totalTimeSpent)"></div>
+            </div>
+            <div class="bg-teal-50 p-4 rounded-lg">
+                <div class="text-sm text-teal-600 font-medium">Cycles</div>
+                <div class="text-2xl font-bold text-teal-900" x-text="cycles"></div>
+            </div>
+        </div>
+        
+        <div class="text-xl font-semibold text-teal-700 mb-8">
+            Score: <span x-text="score"></span> pts
+        </div>
+
+        <button @click="reset()" class="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">
+            Play Again
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/games/game-utils.js"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('breathingGame', () => ({
+            isPlaying: false,
+            showResults: false,
+            duration: 120,
+            timeLeft: 120,
+            totalTimeSpent: 0,
+            cycles: 0,
+            score: 0,
+            
+            phase: 'ready', // ready, inhale, hold, exhale
+            phaseClass: '',
+            instruction: 'Ready...',
+            phaseTimer: 0,
+            
+            mainInterval: null,
+            phaseInterval: null,
+            phaseTimeout: null,
+
+            setDuration(secs) {
+                this.duration = secs;
+                this.timeLeft = secs;
+            },
+
+            formatTime(seconds) {
+                if (typeof window.formatTime === 'function') {
+                    return window.formatTime(seconds);
+                }
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            },
+
+            startGame() {
+                this.isPlaying = true;
+                this.showResults = false;
+                this.timeLeft = this.duration;
+                this.totalTimeSpent = 0;
+                this.cycles = 0;
+                this.score = 0;
+                
+                this.startMainTimer();
+                this.startBreathingCycle();
+            },
+
+            startMainTimer() {
+                this.mainInterval = setInterval(() => {
+                    this.timeLeft--;
+                    this.totalTimeSpent++;
+                    if (this.timeLeft <= 0) {
+                        this.stopGame();
+                    }
+                }, 1000);
+            },
+
+            startBreathingCycle() {
+                this.runInhale();
+            },
+
+            runInhale() {
+                if (!this.isPlaying) return;
+                this.phase = 'inhale';
+                this.phaseClass = 'inhale';
+                this.instruction = 'Breathe In...';
+                this.phaseTimer = 4;
+                
+                this.startPhaseCountdown(4, () => this.runHold());
+            },
+
+            runHold() {
+                if (!this.isPlaying) return;
+                this.phase = 'hold';
+                this.phaseClass = 'hold';
+                this.instruction = 'Hold...';
+                this.phaseTimer = 7;
+                
+                this.startPhaseCountdown(7, () => this.runExhale());
+            },
+
+            runExhale() {
+                if (!this.isPlaying) return;
+                this.phase = 'exhale';
+                this.phaseClass = 'exhale';
+                this.instruction = 'Breathe Out...';
+                this.phaseTimer = 8;
+                
+                this.startPhaseCountdown(8, () => {
+                    this.cycles++;
+                    this.runInhale();
+                });
+            },
+
+            startPhaseCountdown(seconds, callback) {
+                clearInterval(this.phaseInterval);
+                clearTimeout(this.phaseTimeout);
+                
+                this.phaseTimer = seconds;
+                this.phaseInterval = setInterval(() => {
+                    if (this.phaseTimer > 1) {
+                        this.phaseTimer--;
+                    }
+                }, 1000);
+                
+                this.phaseTimeout = setTimeout(() => {
+                    clearInterval(this.phaseInterval);
+                    if (this.isPlaying) callback();
+                }, seconds * 1000);
+            },
+
+            async stopGame() {
+                this.isPlaying = false;
+                clearInterval(this.mainInterval);
+                clearInterval(this.phaseInterval);
+                clearTimeout(this.phaseTimeout);
+                
+                this.phaseClass = '';
+                this.score = this.cycles * 10;
+                this.showResults = true;
+                
+                if (typeof window.saveGameScore === 'function' && this.score > 0) {
+                    await window.saveGameScore('breathing', this.score, this.totalTimeSpent);
+                }
+                if (typeof window.triggerConfetti === 'function') {
+                    window.triggerConfetti();
+                }
+            },
+
+            reset() {
+                this.showResults = false;
+                this.phaseClass = '';
+                this.instruction = 'Ready...';
+                this.phaseTimer = 0;
+            }
+        }));
+    });
+</script>
+{% endblock %}

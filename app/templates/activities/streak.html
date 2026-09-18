@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Streak Detail | Manas Mitra{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-6 flex items-center">
+        <a href="/activities/" class="text-teal-600 hover:text-teal-800 font-medium flex items-center">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to Activities
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-lg p-8 mb-8 border-t-8 border-orange-400">
+        <div class="text-center">
+            <div class="text-5xl mb-4">{{ activity.icon }}</div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ activity.name }} Streak</h1>
+            
+            <div class="mt-8 mb-6 flex flex-col items-center justify-center">
+                <span class="text-8xl font-black text-orange-500 drop-shadow-md animate-pulse">🔥 {{ streak.current_streak }}</span>
+                <span class="text-xl font-bold text-gray-600 mt-4 uppercase tracking-widest">Days in a row</span>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-4 max-w-lg mx-auto mt-8 bg-gray-50 p-6 rounded-2xl">
+                <div class="text-center border-r border-gray-200">
+                    <div class="text-2xl font-bold text-teal-700">{{ streak.longest_streak }}</div>
+                    <div class="text-xs text-gray-500 uppercase font-bold mt-1">Longest</div>
+                </div>
+                <div class="text-center border-r border-gray-200">
+                    <div class="text-2xl font-bold text-teal-700">{{ streak.total_completions }}</div>
+                    <div class="text-xs text-gray-500 uppercase font-bold mt-1">Total</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-teal-700">95%</div>
+                    <div class="text-xs text-gray-500 uppercase font-bold mt-1">Consistency</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if next_reward %}
+    <div class="bg-lavender-50 rounded-2xl shadow p-6 mb-8 border border-lavender-200">
+        <h3 class="text-lg font-bold text-lavender-800 mb-4 flex items-center">
+            <span class="mr-2">🎁</span> Reward Progress
+        </h3>
+        
+        <div class="relative pt-4 pb-2">
+            <div class="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-lavender-200">
+                {% set pct = (streak.current_streak / next_reward.days_needed) * 100 %}
+                <div style="width: {{ pct }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-lavender-500"></div>
+            </div>
+            <div class="flex justify-between text-xs font-bold text-lavender-600">
+                <span>0</span>
+                <span>Target: {{ next_reward.days_needed }} Days ({{ next_reward.name }})</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="bg-white rounded-2xl shadow p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+            <span class="mr-2">📸</span> Upload History
+        </h3>
+        
+        {% if proofs %}
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {% for proof in proofs %}
+            <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden relative group">
+                {% if proof.file_type == 'image' %}
+                <img src="{{ proof.file_path }}" class="w-full h-full object-cover transition transform group-hover:scale-110">
+                {% else %}
+                <video src="{{ proof.file_path }}" class="w-full h-full object-cover"></video>
+                <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"></path></svg>
+                </div>
+                {% endif %}
+                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black to-transparent p-2 text-white text-xs text-center font-medium opacity-0 group-hover:opacity-100 transition">
+                    {{ proof.uploaded_at.strftime('%b %d') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 italic text-center py-8">No proofs uploaded yet. Keep up the streak!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

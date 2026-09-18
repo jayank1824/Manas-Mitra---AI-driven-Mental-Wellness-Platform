@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-teal-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8" x-data="{ step: 1, totalSteps: 10 }">
+  <div class="max-w-2xl mx-auto">
+    <!-- Progress Bar -->
+    <div class="mb-8">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-xs font-semibold inline-block text-teal-600 uppercase">
+          Survey Progress
+        </span>
+        <span class="text-xs font-semibold inline-block text-teal-600" x-text="`${step}/${totalSteps}`"></span>
+      </div>
+      <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-teal-100">
+        <div :style="`width: ${(step/totalSteps)*100}%`" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-teal-500 transition-all duration-500"></div>
+      </div>
+    </div>
+
+    <form action="/survey/submit" method="POST" class="bg-white shadow-xl rounded-2xl p-8 border border-teal-100">
+      
+      <!-- Q1 -->
+      <div x-show="step === 1" x-transition.opacity.duration.400ms>
+        <div class="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold mb-4">Mental Health</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">What mental health challenges are you currently facing? 🧠</h3>
+        <div class="grid grid-cols-2 gap-4">
+          {% for opt in ['Anxiety', 'Depression', 'Loneliness', 'Overthinking', 'Stress', 'Insomnia', 'Panic Attacks', 'Cluster Headache', 'Migraine', 'Low Self-Esteem', 'Anger Issues', 'Social Anxiety'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q1_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q1_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div x-show="step === 2" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold mb-4">Stress Levels</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">How would you rate your current stress level? 😰</h3>
+        <div class="grid grid-cols-1 gap-4">
+          {% for opt in ['Very Low', 'Low', 'Moderate', 'High', 'Very High'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q2_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q2_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div x-show="step === 3" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold mb-4">Medical History</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">Do you have any diagnosed medical conditions? 🏥</h3>
+        <div class="grid grid-cols-2 gap-4">
+          {% for opt in ['None', 'Hypertension', 'Diabetes', 'Thyroid Disorder', 'Heart Condition', 'Chronic Pain', 'Neurological Disorder', 'Autoimmune Disease', 'Respiratory Issues'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q3_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q3_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q4 -->
+      <div x-show="step === 4" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold mb-4">Lifestyle</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">How is your sleep quality? 😴</h3>
+        <div class="grid grid-cols-1 gap-4">
+          {% for opt in ['Excellent', 'Good', 'Fair', 'Poor', 'Very Poor'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q4_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q4_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q5 -->
+      <div x-show="step === 5" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold mb-4">Social</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">How would you describe your social life? 👥</h3>
+        <div class="grid grid-cols-1 gap-4">
+          {% for opt in ['Very Active', 'Active', 'Moderate', 'Limited', 'Isolated', 'Prefer being alone'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q5_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q5_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q6 -->
+      <div x-show="step === 6" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold mb-4">Interests</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">What activities do you enjoy in your free time? 🎨</h3>
+        <div class="grid grid-cols-2 gap-4">
+          {% for opt in ['Painting/Drawing', 'Music', 'Dance', 'Reading/Writing', 'Cooking/Baking', 'Gaming', 'Photography', 'Gardening', 'Yoga/Meditation', 'Sports/Exercise', 'Crafts/DIY', 'Watching Movies/Series'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q6_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q6_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q7 -->
+      <div x-show="step === 7" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-xs font-semibold mb-4">Triggers</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">What are the primary causes of your stress? 💭</h3>
+        <div class="grid grid-cols-2 gap-4">
+          {% for opt in ['Work/Career', 'Academic', 'Financial', 'Relationship', 'Family', 'Health', 'Social Media', 'Loneliness', 'Future Uncertainty', 'Past Trauma', 'Lack of Purpose'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q7_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q7_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q8 -->
+      <div x-show="step === 8" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold mb-4">Medical History</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">Any recent surgeries or medical procedures? 🏥</h3>
+        <div class="grid grid-cols-2 gap-4">
+          {% for opt in ['No recent procedures', 'Minor surgery', 'Major surgery', 'Ongoing treatment', 'Dental', 'Eye surgery', 'Orthopedic'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q8_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q8_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q9 -->
+      <div x-show="step === 9" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold mb-4">Lifestyle</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">How often do you exercise? 🏃</h3>
+        <div class="grid grid-cols-2 gap-4">
+          {% for opt in ['Daily', '4-5 times/week', '2-3 times/week', 'Once a week', 'Rarely', 'Never'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q9_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q9_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Q10 -->
+      <div x-show="step === 10" x-transition.opacity.duration.400ms style="display: none;">
+        <div class="inline-block px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-semibold mb-4">Support</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">What support would help you most? 🤝</h3>
+        <div class="grid grid-cols-2 gap-4">
+          {% for opt in ['Professional therapy', 'Peer community', 'Guided meditation', 'Creative outlets', 'Physical activities', 'AI guidance', 'Stress management', 'Social meetups'] %}
+          <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-teal-50 cursor-pointer transition">
+            <input type="checkbox" name="q10_options[]" value="{{ opt }}" class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+            <span class="text-gray-700">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="mt-4">
+          <input type="text" name="q10_other" placeholder="Other (please specify)" class="w-full p-3 border rounded-lg focus:ring-teal-500 focus:border-teal-500">
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="mt-8 flex justify-between">
+        <button type="button" x-show="step > 1" @click="step--" class="px-6 py-2 border border-teal-500 text-teal-600 rounded-lg hover:bg-teal-50 transition">
+          Previous
+        </button>
+        <div x-show="step === 1"></div> <!-- Spacer -->
+        
+        <button type="button" x-show="step < totalSteps" @click="step++" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition shadow-md">
+          Next
+        </button>
+        
+        <button type="submit" x-show="step === totalSteps" class="px-6 py-2 bg-gradient-to-r from-teal-500 to-teal-700 text-white rounded-lg hover:from-teal-600 hover:to-teal-800 transition shadow-md font-bold">
+          Submit Survey
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

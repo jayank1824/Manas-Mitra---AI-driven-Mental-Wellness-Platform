@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Manas Mitra{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        secondary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/custom.css">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gradient-to-br from-primary-50 to-secondary-50 min-h-screen font-sans text-gray-800">
+    
+    <div class="flex h-screen overflow-hidden" x-data="{ sidebarOpen: false }">
+        
+        {% if not hide_sidebar %}
+        <!-- Sidebar Backdrop for Mobile -->
+        <div x-show="sidebarOpen" class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" @click="sidebarOpen = false" x-transition.opacity></div>
+        
+        <!-- Sidebar -->
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-xl transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0 flex flex-col h-full">
+            
+            <!-- Logo area -->
+            <div class="flex items-center justify-between h-16 px-6 bg-primary-600 text-white shadow-md shrink-0">
+                <a href="/dashboard" class="flex items-center gap-2 text-xl font-bold tracking-wide">
+                    <span class="text-2xl">🪷</span>
+                    Manas Mitra
+                </a>
+                <button @click="sidebarOpen = false" class="lg:hidden text-white focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- User Info -->
+            <div class="px-6 py-4 border-b border-gray-100 bg-primary-50 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-primary-200 flex items-center justify-center text-primary-700 font-bold text-lg shadow-sm">
+                        {{ user.name[0]|upper if user else 'U' }}
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="font-semibold text-gray-800 truncate">{{ user.name if user else 'Guest User' }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ user.email if user else '' }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
+                <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if active_page == 'dashboard' %}bg-primary-100 text-primary-700 font-semibold shadow-sm{% else %}text-gray-600 hover:bg-gray-50 hover:text-primary-600{% endif %}">
+                    <span class="text-xl">🏠</span>
+                    Dashboard
+                </a>
+                
+                <a href="/games" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if active_page == 'games' %}bg-primary-100 text-primary-700 font-semibold shadow-sm{% else %}text-gray-600 hover:bg-gray-50 hover:text-primary-600{% endif %}">
+                    <span class="text-xl">🧠</span>
+                    Mind Games
+                </a>
+                
+                <a href="/activities" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if active_page == 'activities' %}bg-primary-100 text-primary-700 font-semibold shadow-sm{% else %}text-gray-600 hover:bg-gray-50 hover:text-primary-600{% endif %}">
+                    <span class="text-xl">🎯</span>
+                    My Activities
+                </a>
+                
+                <a href="/community" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if active_page == 'community' %}bg-primary-100 text-primary-700 font-semibold shadow-sm{% else %}text-gray-600 hover:bg-gray-50 hover:text-primary-600{% endif %}">
+                    <span class="text-xl">👥</span>
+                    Community
+                </a>
+                
+                <a href="/consultant" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if active_page == 'consultant' %}bg-primary-100 text-primary-700 font-semibold shadow-sm{% else %}text-gray-600 hover:bg-gray-50 hover:text-primary-600{% endif %}">
+                    <span class="text-xl">🤖</span>
+                    AI Consultant
+                </a>
+                
+                <a href="/stats" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if active_page == 'stats' %}bg-primary-100 text-primary-700 font-semibold shadow-sm{% else %}text-gray-600 hover:bg-gray-50 hover:text-primary-600{% endif %}">
+                    <span class="text-xl">📊</span>
+                    My Stats
+                </a>
+                
+                <a href="/stats/log" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {% if active_page == 'log' %}bg-primary-100 text-primary-700 font-semibold shadow-sm{% else %}text-gray-600 hover:bg-gray-50 hover:text-primary-600{% endif %}">
+                    <span class="text-xl">📝</span>
+                    Daily Log
+                </a>
+            </nav>
+            
+            <!-- Bottom Actions -->
+            <div class="p-4 border-t border-gray-100 flex-shrink-0">
+                <a href="/auth/logout" class="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all duration-200">
+                    <span class="text-xl">🚪</span>
+                    Logout
+                </a>
+            </div>
+        </aside>
+        {% endif %}
+        
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-full relative overflow-hidden">
+            
+            {% if not hide_sidebar %}
+            <!-- Mobile Header -->
+            <header class="lg:hidden flex items-center justify-between h-16 px-4 bg-white shadow-sm flex-shrink-0 z-10">
+                <button @click="sidebarOpen = true" class="text-gray-500 focus:outline-none p-2 -ml-2 hover:bg-gray-50 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <span class="font-bold text-lg text-primary-600 flex items-center gap-2">
+                    <span class="text-xl">🪷</span> Manas Mitra
+                </span>
+                <div class="w-8"></div> <!-- Spacer for centering -->
+            </header>
+            {% endif %}
+            
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar">
+                
+                <!-- Flash Messages placeholder (could be populated dynamically) -->
+                <div id="flash-messages" class="mb-6 empty:hidden"></div>
+                
+                {% block content %}{% endblock %}
+                
+            </div>
+        </main>
+    </div>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

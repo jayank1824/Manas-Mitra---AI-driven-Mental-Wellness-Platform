@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Manas Mitra{% endblock %}
+
+{% block content %}
+<div class="space-y-6 md:space-y-8 pb-10">
+
+    <!-- Welcome Banner -->
+    <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-primary-50 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 card-hover">
+        <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary-50 rounded-full opacity-50"></div>
+        <div class="absolute right-20 -bottom-10 w-24 h-24 bg-secondary-50 rounded-full opacity-50"></div>
+        
+        <div class="z-10 text-center md:text-left">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Hello, {{ user.name.split(' ')[0] if user else 'Friend' }}! 👋</h1>
+            <p class="text-gray-500 italic">"Peace comes from within. Do not seek it without."</p>
+        </div>
+        
+        <div class="z-10 flex gap-3 flex-wrap justify-center">
+            {% for interest in interests %}
+                <span class="px-3 py-1 bg-white border border-primary-100 text-primary-700 text-sm font-medium rounded-full shadow-sm">{{ interest }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <!-- Wellness Score Card -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center card-hover">
+            <h3 class="text-sm font-medium text-gray-500 mb-4">Wellness Score</h3>
+            
+            <div class="relative w-24 h-24 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                    <path class="text-gray-100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path class="text-primary-500" stroke-dasharray="{{ wellness_score }}, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="absolute text-2xl font-bold text-gray-800">{{ wellness_score }}</div>
+            </div>
+            
+            <div class="mt-4 px-3 py-1 rounded-full text-xs font-semibold
+                {% if risk_level == 'low' %}bg-green-100 text-green-700
+                {% elif risk_level == 'moderate' %}bg-yellow-100 text-yellow-700
+                {% elif risk_level == 'high' %}bg-orange-100 text-orange-700
+                {% else %}bg-red-100 text-red-700{% endif %}">
+                {{ risk_level|title }} Risk
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between card-hover">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-full bg-secondary-100 flex items-center justify-center text-secondary-600">
+                    <span class="text-xl">🔥</span>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500">Active Streaks</h3>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-gray-800">{{ active_streaks|length }}</p>
+                <p class="text-xs text-gray-400 mt-1">Keep it up!</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between card-hover">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <span class="text-xl">🧠</span>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500">Games Played</h3>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-gray-800">{{ recent_games|length }}</p>
+                <p class="text-xs text-gray-400 mt-1">Recent sessions</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between card-hover">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <span class="text-xl">✨</span>
+                </div>
+                <h3 class="text-sm font-medium text-gray-500">Current Mood</h3>
+            </div>
+            <div>
+                <p class="text-3xl font-bold text-gray-800">
+                    {% if recent_logs %}
+                        {{ recent_logs[0].mood_score }}/10
+                    {% else %}
+                        --
+                    {% endif %}
+                </p>
+                <p class="text-xs text-gray-400 mt-1">From last log</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div>
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="/games" class="bg-gradient-primary text-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center justify-center gap-2 card-hover">
+                <span class="text-3xl mb-1">🎮</span>
+                <span class="font-medium">Play Game</span>
+            </a>
+            
+            <a href="/stats/log" class="bg-gradient-secondary text-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center justify-center gap-2 card-hover">
+                <span class="text-3xl mb-1">📝</span>
+                <span class="font-medium">Log Day</span>
+            </a>
+            
+            <a href="/consultant" class="bg-gradient-warm text-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center justify-center gap-2 card-hover">
+                <span class="text-3xl mb-1">💬</span>
+                <span class="font-medium">Chat AI</span>
+            </a>
+            
+            <a href="/community" class="bg-white border-2 border-primary-200 text-primary-700 p-5 rounded-2xl shadow-sm hover:bg-primary-50 transition-colors flex flex-col items-center justify-center gap-2 card-hover">
+                <span class="text-3xl mb-1">🤝</span>
+                <span class="font-medium">Community</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Logs -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h2 class="font-bold text-gray-800 flex items-center gap-2">
+                    <span>📅</span> Recent Logs
+                </h2>
+                <a href="/stats" class="text-sm text-primary-600 font-medium hover:underline">View all</a>
+            </div>
+            
+            <div class="p-0 flex-1">
+                {% if recent_logs %}
+                    <ul class="divide-y divide-gray-100">
+                    {% for log in recent_logs[:3] %}
+                        <li class="p-5 hover:bg-gray-50 transition-colors">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="font-medium text-gray-800">{{ log.date }}</span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">Mood: {{ log.mood_score }}/10</span>
+                            </div>
+                            {% if log.notes %}
+                                <p class="text-sm text-gray-500 line-clamp-2 italic">"{{ log.notes }}"</p>
+                            {% else %}
+                                <p class="text-sm text-gray-400 italic">No notes added.</p>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="p-8 text-center flex flex-col items-center justify-center h-full">
+                        <span class="text-4xl mb-3 opacity-50">✍️</span>
+                        <p class="text-gray-500 mb-4">You haven't logged any days yet.</p>
+                        <a href="/stats/log" class="text-sm bg-primary-100 text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-200 transition-colors">Log Today</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Active Streaks -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h2 class="font-bold text-gray-800 flex items-center gap-2">
+                    <span>⭐</span> Your Streaks
+                </h2>
+                <a href="/activities" class="text-sm text-primary-600 font-medium hover:underline">Explore</a>
+            </div>
+            
+            <div class="p-5 flex-1 overflow-y-auto">
+                {% if active_streaks %}
+                    <div class="space-y-4">
+                    {% for streak in active_streaks %}
+                        <div class="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-primary-200 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center text-2xl">
+                                    {{ streak.activity.icon if streak.activity else '🎯' }}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800">{{ streak.activity.name if streak.activity else 'Activity' }}</h4>
+                                    <p class="text-xs text-gray-500">Longest: {{ streak.longest_streak }} days</p>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-black text-orange-500 flex items-center gap-1">
+                                    {{ streak.current_streak }} <span class="text-lg">🔥</span>
+                                </div>
+                                <span class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Days</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-8 text-center flex flex-col items-center justify-center h-full">
+                        <span class="text-4xl mb-3 opacity-50">🌱</span>
+                        <p class="text-gray-500 mb-4">Start an activity to build streaks and earn rewards!</p>
+                        <a href="/activities" class="text-sm bg-primary-100 text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-200 transition-colors">Browse Activities</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

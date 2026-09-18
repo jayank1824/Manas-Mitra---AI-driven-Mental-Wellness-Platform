@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Your Wellness Stats{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    
+    <!-- Header & Actions -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-3xl font-bold leading-7 text-gray-900 sm:text-4xl sm:truncate flex items-center">
+                <span class="mr-3">📊</span> Your Wellness Stats
+            </h2>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+            <select id="timeRange" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md">
+                <option value="7">Last 7 Days</option>
+                <option value="30" selected>Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+            </select>
+            
+            {% if not logged_today %}
+            <a href="/stats/log" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                Log Today 📝
+            </a>
+            {% else %}
+            <a href="/stats/log" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                View Logs
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div class="bg-white overflow-hidden shadow rounded-lg border border-teal-100">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-teal-100 rounded-md p-3">
+                        <svg class="h-6 w-6 text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Wellness Score</dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">{{ summary.current_score }}</div>
+                                <span class="ml-2 text-sm font-medium {% if summary.trend == 'improving' %}text-green-600{% elif summary.trend == 'declining' %}text-red-600{% else %}text-gray-500{% endif %}">
+                                    {% if summary.trend == 'improving' %}↑ Improving{% elif summary.trend == 'declining' %}↓ Declining{% else %}→ Stable{% endif %}
+                                </span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border border-indigo-100">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-indigo-100 rounded-md p-3">
+                        <svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Longest Streak</dt>
+                            <dd class="text-2xl font-semibold text-gray-900">{{ summary.longest_streak }} days</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border border-purple-100">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
+                        <svg class="h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Activities Done</dt>
+                            <dd class="text-2xl font-semibold text-gray-900">{{ summary.total_activities }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border border-rose-100">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-rose-100 rounded-md p-3">
+                        <svg class="h-6 w-6 text-rose-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Games Played</dt>
+                            <dd class="text-2xl font-semibold text-gray-900">{{ summary.games_played }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Insights -->
+    {% if insights %}
+    <div class="bg-gradient-to-r from-teal-500 to-indigo-600 rounded-xl shadow-lg mb-8 p-6 text-white">
+        <h3 class="text-xl font-bold mb-4 flex items-center">
+            <span class="mr-2">✨</span> AI Insights
+        </h3>
+        <ul class="space-y-3">
+            {% for insight in insights %}
+            <li class="flex items-start">
+                <span class="bg-white bg-opacity-20 rounded-full p-1 mr-3 mt-0.5">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </span>
+                <span>{{ insight }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Wellness Trend -->
+        <div class="bg-white p-6 rounded-xl shadow border border-gray-100">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Wellness Score Over Time</h3>
+            <div class="relative h-72">
+                <canvas id="wellnessChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Mood & Energy -->
+        <div class="bg-white p-6 rounded-xl shadow border border-gray-100">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Mood & Energy Trend</h3>
+            <div class="relative h-72">
+                <canvas id="moodChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Activity Completion -->
+        <div class="bg-white p-6 rounded-xl shadow border border-gray-100">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Activity Completion</h3>
+            <div class="relative h-72">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Game Performance -->
+        <div class="bg-white p-6 rounded-xl shadow border border-gray-100">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Game Performance</h3>
+            <div class="relative h-72">
+                <canvas id="gameChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Community Engagement -->
+        <div class="bg-white p-6 rounded-xl shadow border border-gray-100">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Community Engagement</h3>
+            <div class="relative h-72 flex justify-center">
+                <canvas id="communityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Sleep vs Stress -->
+        <div class="bg-white p-6 rounded-xl shadow border border-gray-100">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Sleep vs Stress Correlation</h3>
+            <div class="relative h-72">
+                <canvas id="correlationChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/charts.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const timeRange = document.getElementById('timeRange');
+        
+        async function loadAllCharts() {
+            const days = timeRange.value;
+            
+            // Fetch Wellness Data
+            fetch(`/stats/api/wellness?days=${days}`)
+                .then(res => res.json())
+                .then(data => createWellnessChart('wellnessChart', data.labels, data.data));
+                
+            // Fetch Mood Data
+            fetch(`/stats/api/mood?days=${days}`)
+                .then(res => res.json())
+                .then(data => createMoodChart('moodChart', data.labels, data.moodData, data.energyData));
+                
+            // Fetch Activity Data
+            fetch(`/stats/api/activities`)
+                .then(res => res.json())
+                .then(data => createActivityChart('activityChart', data.labels, data.data));
+                
+            // Fetch Game Data
+            fetch(`/stats/api/games`)
+                .then(res => res.json())
+                .then(data => createGameRadarChart('gameChart', data.labels, data.data));
+                
+            // Fetch Community Data
+            fetch(`/stats/api/community`)
+                .then(res => res.json())
+                .then(data => createEngagementDoughnut('communityChart', data.labels, data.data));
+                
+            // Fetch Correlation Data
+            fetch(`/stats/api/correlation`)
+                .then(res => res.json())
+                .then(data => createCorrelationScatter('correlationChart', data.sleepData, data.stressData));
+        }
+        
+        timeRange.addEventListener('change', loadAllCharts);
+        loadAllCharts(); // Initial load
+    });
+</script>
+{% endblock %}

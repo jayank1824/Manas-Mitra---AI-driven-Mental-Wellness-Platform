@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Mind & Stress Relief Games - Manas Mitra{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-12">
+    <!-- Header Banner -->
+    <div class="text-center bg-gradient-to-r from-teal-700 via-emerald-700 to-teal-900 text-white rounded-3xl p-8 sm:p-12 shadow-xl relative overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-64 h-64 bg-teal-400/20 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-12 -left-12 w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl"></div>
+        
+        <div class="relative z-10 max-w-3xl mx-auto space-y-4">
+            <span class="inline-block bg-teal-500/30 border border-teal-300/40 text-teal-200 text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-wider">
+                Interactive Therapeutic Suite
+            </span>
+            <h1 class="text-4xl sm:text-5xl font-extrabold flex items-center justify-center gap-3">
+                <span>🧠</span> Mind & Stress Relief Games
+            </h1>
+            <p class="text-lg sm:text-xl text-teal-100 font-light">
+                Explore interactive games scientifically designed to reduce stress, calm anxiety, improve focus, and promote mental clarity.
+            </p>
+        </div>
+    </div>
+
+    <!-- Section 1: Instant Stress Relief Games -->
+    <div class="space-y-6">
+        <div class="flex items-center gap-3 border-b border-teal-100 pb-4">
+            <span class="text-3xl">💆‍♂️</span>
+            <div>
+                <h2 class="text-2xl font-bold text-teal-900">Instant Stress Relief & Venting</h2>
+                <p class="text-sm text-teal-600">Quick interactive exercises to release tension, vent frustration, and calm the mind.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Stress Popper -->
+            <div class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden border border-teal-100 flex flex-col group">
+                <div class="p-6 flex-grow text-center bg-gradient-to-b from-teal-50/50 to-white">
+                    <div class="text-6xl mb-4 transform group-hover:scale-110 transition-transform">🫧</div>
+                    <span class="inline-block bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full mb-3">Tactile Venting</span>
+                    <h3 class="text-2xl font-bold text-teal-900 mb-2">Stress Popper</h3>
+                    <p class="text-gray-600 text-sm mb-4">Pop virtual bubble wrap with satisfying sounds, pop ring effects, and live stress meter reduction.</p>
+                </div>
+                <div class="p-6 pt-0 mt-auto">
+                    <a href="/games/bubble-wrap" class="block w-full text-center bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all">
+                        Play Stress Popper 🫧
+                    </a>
+                </div>
+            </div>
+
+            <!-- Worry Dissolver -->
+            <div class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden border border-teal-100 flex flex-col group">
+                <div class="p-6 flex-grow text-center bg-gradient-to-b from-indigo-50/50 to-white">
+                    <div class="text-6xl mb-4 transform group-hover:scale-110 transition-transform">🌪️</div>
+                    <span class="inline-block bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full mb-3">Cognitive Defusion</span>
+                    <h3 class="text-2xl font-bold text-teal-900 mb-2">Worry Dissolver</h3>
+                    <p class="text-gray-600 text-sm mb-4">Type down negative thoughts & watch them shatter into stardust, replaced by CBT affirmations.</p>
+                </div>
+                <div class="p-6 pt-0 mt-auto">
+                    <a href="/games/worry-destroyer" class="block w-full text-center bg-gradient-to-r from-indigo-500 to-teal-500 hover:from-indigo-600 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all">
+                        Dissolve Worries 🌪️
+                    </a>
+                </div>
+            </div>
+
+            <!-- Zen Garden -->
+            <div class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden border border-teal-100 flex flex-col group">
+                <div class="p-6 flex-grow text-center bg-gradient-to-b from-amber-50/50 to-white">
+                    <div class="text-6xl mb-4 transform group-hover:scale-110 transition-transform">🪨</div>
+                    <span class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full mb-3">Mindful Art</span>
+                    <h3 class="text-2xl font-bold text-teal-900 mb-2">Zen Sand Garden</h3>
+                    <p class="text-gray-600 text-sm mb-4">Rake smooth wave patterns in golden sand, place river pebbles, and listen to binaural chimes.</p>
+                </div>
+                <div class="p-6 pt-0 mt-auto">
+                    <a href="/games/zen-garden" class="block w-full text-center bg-gradient-to-r from-amber-500 to-teal-500 hover:from-amber-600 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all">
+                        Enter Zen Garden 🪨
+                    </a>
+                </div>
+            </div>
+
+            <!-- Breathing Bubble -->
+            <div class="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden border border-teal-100 flex flex-col group">
+                <div class="p-6 flex-grow text-center bg-gradient-to-b from-cyan-50/50 to-white">
+                    <div class="text-6xl mb-4 transform group-hover:scale-110 transition-transform">🫁</div>
+                    <span class="inline-block bg-cyan-100 text-cyan-800 text-xs font-bold px-3 py-1 rounded-full mb-3">Breathing Control</span>
+                    <h3 class="text-2xl font-bold text-teal-900 mb-2">Breathing Bubble</h3>
+                    <p class="text-gray-600 text-sm mb-4">Guided 4-7-8 breathing exercises to slow down heart rate and soothe the nervous system.</p>
+                </div>
+                <div class="p-6 pt-0 mt-auto">
+                    <a href="/games/breathing" class="block w-full text-center bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all">
+                        Start Breathing 🫁
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Section 2: Mindfulness & Cognitive Training -->
+    <div class="space-y-6">
+        <div class="flex items-center gap-3 border-b border-teal-100 pb-4">
+            <span class="text-3xl">🧩</span>
+            <div>
+                <h2 class="text-2xl font-bold text-teal-900">Cognitive Focus & Mindfulness</h2>
+                <p class="text-sm text-teal-600">Reframe thoughts, enhance memory, and build focus.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+            <!-- Gratitude Journal -->
+            <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-teal-100 flex flex-col">
+                <div class="p-5 flex-grow text-center">
+                    <div class="text-5xl mb-3">📝</div>
+                    <h3 class="text-xl font-bold text-teal-900 mb-1">Gratitude Journal</h3>
+                    <p class="text-gray-600 text-xs mb-3">Cultivate positive perspective through daily gratitude entries.</p>
+                    <span class="inline-block bg-teal-50 text-teal-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">Positivity</span>
+                </div>
+                <div class="p-5 pt-0 mt-auto">
+                    <a href="/games/gratitude" class="block w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-3 rounded-xl text-sm transition-colors">
+                        Write Entries 📝
+                    </a>
+                </div>
+            </div>
+
+            <!-- Memory Match -->
+            <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-teal-100 flex flex-col">
+                <div class="p-5 flex-grow text-center">
+                    <div class="text-5xl mb-3">🧠</div>
+                    <h3 class="text-xl font-bold text-teal-900 mb-1">Memory Match</h3>
+                    <p class="text-gray-600 text-xs mb-3">Sharpen memory and concentration with card challenges.</p>
+                    <span class="inline-block bg-teal-50 text-teal-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">Cognitive</span>
+                </div>
+                <div class="p-5 pt-0 mt-auto">
+                    <a href="/games/memory" class="block w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-3 rounded-xl text-sm transition-colors">
+                        Play Match 🧠
+                    </a>
+                </div>
+            </div>
+
+            <!-- Word Therapy -->
+            <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-teal-100 flex flex-col">
+                <div class="p-5 flex-grow text-center">
+                    <div class="text-5xl mb-3">🧩</div>
+                    <h3 class="text-xl font-bold text-teal-900 mb-1">Word Therapy</h3>
+                    <p class="text-gray-600 text-xs mb-3">Discover encouraging words to boost optimism.</p>
+                    <span class="inline-block bg-teal-50 text-teal-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">Mindfulness</span>
+                </div>
+                <div class="p-5 pt-0 mt-auto">
+                    <a href="/games/puzzle" class="block w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-3 rounded-xl text-sm transition-colors">
+                        Play Word Therapy 🧩
+                    </a>
+                </div>
+            </div>
+
+            <!-- Focus Flow -->
+            <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-teal-100 flex flex-col">
+                <div class="p-5 flex-grow text-center">
+                    <div class="text-5xl mb-3">🎯</div>
+                    <h3 class="text-xl font-bold text-teal-900 mb-1">Focus Flow</h3>
+                    <p class="text-gray-600 text-xs mb-3">Train attention and rapid reaction speeds.</p>
+                    <span class="inline-block bg-teal-50 text-teal-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">Concentration</span>
+                </div>
+                <div class="p-5 pt-0 mt-auto">
+                    <a href="/games/focus" class="block w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-3 rounded-xl text-sm transition-colors">
+                        Train Focus 🎯
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{% block title %}Stress Popper - Manas Mitra{% endblock %}
+
+{% block extra_head %}
+<style>
+    .bubble-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+    @media (min-width: 640px) {
+        .bubble-grid {
+            grid-template-columns: repeat(8, 1fr);
+            gap: 14px;
+        }
+    }
+
+    .pop-bubble {
+        aspect-ratio: 1;
+        border-radius: 50%;
+        position: relative;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    /* Unpopped Bubble Style */
+    .pop-bubble.unpopped {
+        background: radial-gradient(circle at 30% 30%, #5eead4, #0d9488);
+        box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.2), 0 6px 12px rgba(13, 148, 136, 0.3), inset 0 3px 6px rgba(255, 255, 255, 0.7);
+    }
+    .pop-bubble.unpopped:hover {
+        transform: scale(1.08);
+        box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(13, 148, 136, 0.4), inset 0 3px 6px rgba(255, 255, 255, 0.9);
+    }
+    .pop-bubble.unpopped:active {
+        transform: scale(0.92);
+    }
+
+    /* Rainbow / Bonus Bubbles */
+    .pop-bubble.rainbow {
+        background: radial-gradient(circle at 30% 30%, #f472b6, #8b5cf6, #3b82f6);
+        box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.2), 0 6px 14px rgba(139, 92, 246, 0.4), inset 0 3px 6px rgba(255, 255, 255, 0.8);
+    }
+    .pop-bubble.gold {
+        background: radial-gradient(circle at 30% 30%, #fde047, #eab308);
+        box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.2), 0 6px 14px rgba(234, 179, 8, 0.4), inset 0 3px 6px rgba(255, 255, 255, 0.9);
+    }
+
+    /* Popped Bubble Style */
+    .pop-bubble.popped {
+        background: rgba(13, 148, 136, 0.15);
+        box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25);
+        transform: scale(0.92);
+        cursor: default;
+    }
+
+    .pop-bubble.popped::after {
+        content: '•';
+        color: rgba(13, 148, 136, 0.4);
+        font-size: 1.5rem;
+    }
+
+    /* Pop Particle Effect */
+    @keyframes popRing {
+        0% { transform: scale(0.5); opacity: 1; }
+        100% { transform: scale(2); opacity: 0; }
+    }
+    .pop-ring {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 3px solid rgba(45, 212, 191, 0.8);
+        animation: popRing 0.35s ease-out forwards;
+        pointer-events: none;
+    }
+
+    /* Stress Gauge Bar */
+    .stress-bar-fill {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4" x-data="bubbleWrapGame()">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold text-teal-800 flex items-center justify-center gap-3">
+            <span>🫧</span> Stress Popper
+        </h1>
+        <p class="text-teal-600 mt-2">Pop bubbles, trigger satisfying sensory sounds, and pop your stress away!</p>
+    </div>
+
+    <!-- Start / Setup Screen -->
+    <div x-show="!isPlaying && !showResults" class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto text-center border border-teal-100">
+        <div class="text-6xl mb-4 animate-bounce">🎈</div>
+        <h2 class="text-2xl font-bold text-teal-900 mb-2">Choose Mode</h2>
+        <p class="text-gray-600 mb-6 text-sm">Select how you'd like to pop away your tension today.</p>
+
+        <div class="space-y-3 mb-6">
+            <button @click="setMode('relaxed')" :class="mode === 'relaxed' ? 'bg-teal-600 text-white shadow-md' : 'bg-teal-50 text-teal-800 hover:bg-teal-100'" class="w-full py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-between">
+                <span>🧘 Relaxed Endless Mode</span>
+                <span class="text-xs opacity-75">No timers</span>
+            </button>
+            <button @click="setMode('blitz')" :class="mode === 'blitz' ? 'bg-teal-600 text-white shadow-md' : 'bg-teal-50 text-teal-800 hover:bg-teal-100'" class="w-full py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-between">
+                <span>⚡ 60-Second Stress Release</span>
+                <span class="text-xs opacity-75">Timed Pop Blitz</span>
+            </button>
+        </div>
+
+        <!-- Sound Toggle -->
+        <div class="flex items-center justify-between bg-teal-50/70 p-3 rounded-xl mb-6">
+            <span class="text-sm font-medium text-teal-900 flex items-center gap-2">
+                <span>🔊</span> Satisfying Pop Audio
+            </span>
+            <input type="checkbox" x-model="soundEnabled" class="w-5 h-5 accent-teal-600 rounded cursor-pointer">
+        </div>
+
+        <button @click="startGame()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] text-lg">
+            Start Popping! 🫧
+        </button>
+    </div>
+
+    <!-- Play Screen -->
+    <div x-show="isPlaying" class="bg-gradient-to-br from-teal-900 via-teal-800 to-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden border border-teal-700/50">
+        <!-- Floating Ambient Background Accents -->
+        <div class="absolute -top-12 -left-12 w-48 h-48 bg-teal-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-12 -right-12 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl"></div>
+
+        <div class="relative z-10 space-y-6">
+            <!-- Top Bar Stats -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-teal-950/60 backdrop-blur-md p-4 rounded-2xl border border-teal-600/30 text-teal-100">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🫧</span>
+                    <div>
+                        <div class="text-xs text-teal-300">Pops</div>
+                        <div class="text-xl font-bold" x-text="poppedCount"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">⚡</span>
+                    <div>
+                        <div class="text-xs text-teal-300">Combo</div>
+                        <div class="text-xl font-bold text-amber-300" x-text="combo + 'x'"></div>
+                    </div>
+                </div>
+
+                <template x-if="mode === 'blitz'">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">⏱️</span>
+                        <div>
+                            <div class="text-xs text-teal-300">Time Left</div>
+                            <div class="text-xl font-bold text-emerald-400" x-text="timeLeft + 's'"></div>
+                        </div>
+                    </div>
+                </template>
+
+                <button @click="stopGame()" class="bg-teal-800/80 hover:bg-teal-700 text-teal-100 text-xs px-4 py-2 rounded-xl transition-colors font-medium">
+                    Finish & Save
+                </button>
+            </div>
+
+            <!-- Stress Meter -->
+            <div class="bg-teal-950/40 p-4 rounded-2xl border border-teal-700/30">
+                <div class="flex justify-between items-center text-sm text-teal-200 mb-2">
+                    <span class="font-medium flex items-center gap-1.5">
+                        <span>📉</span> Stress Level Meter
+                    </span>
+                    <span class="font-bold" x-text="stressLevel + '% Stress'"></span>
+                </div>
+                <div class="w-full bg-teal-950/80 rounded-full h-3 overflow-hidden p-0.5 border border-teal-700/40">
+                    <div class="stress-bar-fill h-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-400" :style="`width: ${stressLevel}%`"></div>
+                </div>
+            </div>
+
+            <!-- Bubble Grid Container -->
+            <div class="bg-teal-950/50 p-6 rounded-2xl border border-teal-700/30 backdrop-blur-sm shadow-inner">
+                <div class="bubble-grid">
+                    <template x-for="(bubble, index) in bubbles" :key="index">
+                        <div @click="popBubble(index, $event)" 
+                             class="pop-bubble" 
+                             :class="{
+                                 'unpopped': !bubble.popped && bubble.type === 'normal',
+                                 'rainbow': !bubble.popped && bubble.type === 'rainbow',
+                                 'gold': !bubble.popped && bubble.type === 'gold',
+                                 'popped': bubble.popped
+                             }">
+                             <span x-show="!bubble.popped && bubble.type === 'rainbow'" class="text-xs">✨</span>
+                             <span x-show="!bubble.popped && bubble.type === 'gold'" class="text-xs">⭐</span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Controls & Quick Actions -->
+            <div class="flex items-center justify-between">
+                <button @click="refillBubbles()" class="bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 text-emerald-200 px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-2">
+                    <span>🔄</span> Fresh Bubble Sheet
+                </button>
+                <div class="text-xs text-teal-300 italic">
+                    Tip: Click or tap fast to build combos!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div x-show="showResults" class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto text-center border border-teal-100" style="display: none;">
+        <div class="text-6xl mb-4 animate-bounce">🎉</div>
+        <h2 class="text-2xl font-bold text-teal-900 mb-2">Feeling Relaxed?</h2>
+        <p class="text-gray-600 mb-6">Great job popping away your tension!</p>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-teal-50 p-4 rounded-xl">
+                <div class="text-xs text-teal-600 font-semibold uppercase">Total Bubbles Popped</div>
+                <div class="text-3xl font-extrabold text-teal-900 mt-1" x-text="poppedCount"></div>
+            </div>
+            <div class="bg-teal-50 p-4 rounded-xl">
+                <div class="text-xs text-teal-600 font-semibold uppercase">Stress Reduction</div>
+                <div class="text-3xl font-extrabold text-emerald-600 mt-1" x-text="(100 - stressLevel) + '%'"></div>
+            </div>
+        </div>
+
+        <div class="text-xl font-bold text-teal-800 mb-6">
+            Total Score: <span class="text-teal-600" x-text="score"></span> pts
+        </div>
+
+        <div class="space-y-3">
+            <button @click="startGame()" class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all">
+                Pop More Bubbles 🫧
+            </button>
+            <a href="/games" class="block w-full bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold py-3 px-4 rounded-xl transition-all">
+                Back to All Games
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/games/game-utils.js"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('bubbleWrapGame', () => ({
+            isPlaying: false,
+            showResults: false,
+            mode: 'relaxed', // 'relaxed' or 'blitz'
+            soundEnabled: true,
+            
+            bubbles: [],
+            totalBubbles: 48,
+            poppedCount: 0,
+            stressLevel: 100,
+            combo: 0,
+            comboTimer: null,
+            score: 0,
+            
+            timeLeft: 60,
+            totalTimeSpent: 0,
+            timerInterval: null,
+            
+            audioCtx: null,
+
+            initAudio() {
+                if (!this.audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        this.audioCtx = new AudioContext();
+                    }
+                }
+                if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+            },
+
+            playPopSound(pitchMultiplier = 1) {
+                if (!this.soundEnabled) return;
+                try {
+                    this.initAudio();
+                    if (!this.audioCtx) return;
+
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+
+                    const baseFreq = (400 + Math.random() * 200) * pitchMultiplier;
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(baseFreq, this.audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.25, this.audioCtx.currentTime + 0.06);
+
+                    gain.gain.setValueAtTime(0.4, this.audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.06);
+
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+
+                    osc.start();
+                    osc.stop(this.audioCtx.currentTime + 0.07);
+                } catch (e) {
+                    console.log('Audio synth error:', e);
+                }
+            },
+
+            setMode(newMode) {
+                this.mode = newMode;
+            },
+
+            generateBubbles() {
+                const arr = [];
+                for (let i = 0; i < this.totalBubbles; i++) {
+                    const rand = Math.random();
+                    let type = 'normal';
+                    if (rand < 0.1) type = 'gold';
+                    else if (rand < 0.25) type = 'rainbow';
+                    arr.push({ popped: false, type: type });
+                }
+                this.bubbles = arr;
+            },
+
+            startGame() {
+                this.initAudio();
+                this.isPlaying = true;
+                this.showResults = false;
+                this.poppedCount = 0;
+                this.stressLevel = 100;
+                this.combo = 0;
+                this.score = 0;
+                this.timeLeft = 60;
+                this.totalTimeSpent = 0;
+
+                this.generateBubbles();
+
+                if (this.mode === 'blitz') {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = setInterval(() => {
+                        this.timeLeft--;
+                        this.totalTimeSpent++;
+                        if (this.timeLeft <= 0) {
+                            this.stopGame();
+                        }
+                    }, 1000);
+                } else {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = setInterval(() => {
+                        this.totalTimeSpent++;
+                    }, 1000);
+                }
+            },
+
+            popBubble(index, event) {
+                if (!this.isPlaying) return;
+                const bubble = this.bubbles[index];
+                if (bubble.popped) return;
+
+                bubble.popped = true;
+                this.poppedCount++;
+
+                // Update Combo
+                this.combo++;
+                clearTimeout(this.comboTimer);
+                this.comboTimer = setTimeout(() => {
+                    this.combo = 0;
+                }, 1200);
+
+                // Sound Effect
+                const pitch = bubble.type === 'gold' ? 1.5 : (bubble.type === 'rainbow' ? 1.3 : 1 + (this.combo * 0.05));
+                this.playPopSound(pitch);
+
+                // Visual Pop Ring Effect
+                if (event && event.currentTarget) {
+                    const ring = document.createElement('div');
+                    ring.className = 'pop-ring';
+                    event.currentTarget.appendChild(ring);
+                    setTimeout(() => ring.remove(), 400);
+                }
+
+                // Update Stress & Score
+                let points = 10;
+                if (bubble.type === 'rainbow') points = 25;
+                if (bubble.type === 'gold') points = 50;
+
+                this.score += points * Math.max(1, Math.floor(this.combo / 3));
+
+                // Stress reduction calculation
+                this.stressLevel = Math.max(0, Math.round(100 - (this.poppedCount * 1.5)));
+
+                // If sheet cleared, auto refill with bonus
+                if (this.bubbles.every(b => b.popped)) {
+                    setTimeout(() => {
+                        this.refillBubbles();
+                        this.score += 100;
+                    }, 250);
+                }
+            },
+
+            refillBubbles() {
+                this.generateBubbles();
+                this.playPopSound(1.6);
+            },
+
+            async stopGame() {
+                this.isPlaying = false;
+                clearInterval(this.timerInterval);
+
+                this.showResults = true;
+
+                if (typeof window.saveGameScore === 'function' && this.score > 0) {
+                    await window.saveGameScore('bubble_wrap', this.score, this.totalTimeSpent);
+                }
+                if (typeof window.triggerConfetti === 'function') {
+                    window.triggerConfetti();
+                }
+            }
+        }));
+    });
+</script>
+{% endblock %}

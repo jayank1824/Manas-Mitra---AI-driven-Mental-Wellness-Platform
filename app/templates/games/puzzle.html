@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Word Therapy - Manas Mitra{% endblock %}
+
+{% block extra_head %}
+<style>
+    .grid-cell {
+        width: 32px;
+        height: 32px;
+        @media (min-width: 640px) {
+            width: 40px;
+            height: 40px;
+        }
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s;
+        border-radius: 4px;
+    }
+    .cell-default { background-color: white; color: #115e59; }
+    .cell-selected { background-color: #99f6e4; color: #115e59; transform: scale(1.1); z-index: 10;}
+    .cell-found { background-color: #34d399; color: white; }
+    
+    .word-found { text-decoration: line-through; color: #9ca3af; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-8 px-4" x-data="wordPuzzle()">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-teal-800">🧩 Word Therapy</h1>
+        <p class="text-teal-600 mt-2">Find positive words to boost your mood</p>
+    </div>
+
+    <div x-show="!isPlaying && !showResults" class="text-center">
+        <button @click="startGame()" class="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-colors text-lg">
+            Start Puzzle
+        </button>
+    </div>
+
+    <div x-show="isPlaying" class="flex flex-col lg:flex-row gap-8 items-start" style="display: none;">
+        
+        <!-- Game Board -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-teal-100 flex-grow w-full max-w-2xl mx-auto overflow-hidden">
+            <div class="flex justify-between items-center mb-6 text-teal-800 font-semibold bg-teal-50 p-3 rounded-lg">
+                <div>Found: <span x-text="foundWords.length + '/' + targetWords.length"></span></div>
+                <div>Time: <span x-text="formatTime(seconds)"></span></div>
+                <button @click="quitGame()" class="text-sm text-teal-600 hover:text-teal-800">Quit</button>
+            </div>
+
+            <div class="inline-block bg-teal-50 p-2 rounded-lg touch-none" 
+                 @mousedown="startSelection($event)" 
+                 @mousemove="updateSelection($event)" 
+                 @mouseup="endSelection()" 
+                 @mouseleave="endSelection()"
+                 @touchstart.prevent="startSelectionTouch($event)"
+                 @touchmove.prevent="updateSelectionTouch($event)"
+                 @touchend.prevent="endSelection()">
+                
+                <template x-for="(row, rowIndex) in grid" :key="rowIndex">
+                    <div class="flex gap-1 mb-1">
+                        <template x-for="(cell, colIndex) in row" :key="colIndex">
+                            <div class="grid-cell shadow-sm"
+                                 :class="{
+                                     'cell-found': cell.found,
+                                     'cell-selected': isSelected(rowIndex, colIndex) && !cell.found,
+                                     'cell-default': !isSelected(rowIndex, colIndex) && !cell.found
+                                 }"
+                                 :data-row="rowIndex" :data-col="colIndex">
+                                <span x-text="cell.letter"></span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Word List -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border border-teal-100 w-full lg:w-64 flex-shrink-0">
+            <h3 class="font-bold text-teal-900 mb-4 text-lg border-b pb-2">Words to Find</h3>
+            <ul class="grid grid-cols-2 lg:grid-cols-1 gap-2">
+                <template x-for="word in targetWords" :key="word">
+                    <li class="font-medium px-2 py-1 rounded transition-colors"
+                        :class="foundWords.includes(word) ? 'word-found bg-gray-50' : 'text-teal-700'">
+                        <span x-text="word"></span>
+                        <span x-show="foundWords.includes(word)">✓</span>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div x-show="showResults" class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto text-center border border-teal-100" style="display: none;">
+        <div class="text-6xl mb-4">✨</div>
+        <h2 class="text-2xl font-bold text-teal-900 mb-2">Wonderful Job!</h2>
+        <p class="text-gray-600 mb-6">You found all the positive words.</p>
+        
+        <div class="bg-teal-50 p-4 rounded-lg mb-6">
+            <div class="text-sm text-teal-600 font-medium">Time Taken</div>
+            <div class="text-3xl font-bold text-teal-900" x-text="formatTime(seconds)"></div>
+        </div>
+        
+        <div class="text-2xl font-bold text-teal-700 mb-8">
+            Score: <span x-text="score"></span>
+        </div>
+
+        <button @click="startGame()" class="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">
+            Play Again
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/games/game-utils.js"></script>
+<script>
+    const WORDS = ['PEACE', 'CALM', 'HOPE', 'LOVE', 'JOY', 'BRAVE', 'STRONG', 'SMILE', 'HEAL', 'GROW', 'LIGHT', 'HAPPY'];
+    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('wordPuzzle', () => ({
+            isPlaying: false,
+            showResults: false,
+            gridSize: 10,
+            grid: [],
+            targetWords: [],
+            foundWords: [],
+            
+            seconds: 0,
+            timer: null,
+            score: 0,
+            
+            isDragging: false,
+            startCell: null,
+            currentCell: null,
+            selectedPath: [],
+
+            formatTime(s) {
+                if (typeof window.formatTime === 'function') return window.formatTime(s);
+                return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+            },
+
+            startGame() {
+                this.targetWords = [...WORDS].sort(() => 0.5 - Math.random()).slice(0, 8); // Pick 8 random words
+                this.foundWords = [];
+                this.seconds = 0;
+                this.score = 0;
+                this.generateGrid();
+                
+                this.isPlaying = true;
+                this.showResults = false;
+                
+                clearInterval(this.timer);
+                this.timer = setInterval(() => { this.seconds++; }, 1000);
+            },
+
+            generateGrid() {
+                // Initialize empty grid
+                this.grid = Array(this.gridSize).fill(null).map(() => 
+                    Array(this.gridSize).fill(null).map(() => ({ letter: '', found: false }))
+                );
+
+                // Place words
+                this.targetWords.forEach(word => {
+                    let placed = false;
+                    let attempts = 0;
+                    while (!placed && attempts < 100) {
+                        attempts++;
+                        const isHorizontal = Math.random() > 0.5;
+                        const row = Math.floor(Math.random() * this.gridSize);
+                        const col = Math.floor(Math.random() * this.gridSize);
+                        
+                        if (this.canPlaceWord(word, row, col, isHorizontal)) {
+                            this.placeWord(word, row, col, isHorizontal);
+                            placed = true;
+                        }
+                    }
+                });
+
+                // Fill rest with random letters
+                for (let r = 0; r < this.gridSize; r++) {
+                    for (let c = 0; c < this.gridSize; c++) {
+                        if (this.grid[r][c].letter === '') {
+                            this.grid[r][c].letter = ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+                        }
+                    }
+                }
+            },
+
+            canPlaceWord(word, row, col, isHorizontal) {
+                if (isHorizontal) {
+                    if (col + word.length > this.gridSize) return false;
+                    for (let i = 0; i < word.length; i++) {
+                        if (this.grid[row][col+i].letter !== '' && this.grid[row][col+i].letter !== word[i]) return false;
+                    }
+                } else {
+                    if (row + word.length > this.gridSize) return false;
+                    for (let i = 0; i < word.length; i++) {
+                        if (this.grid[row+i][col].letter !== '' && this.grid[row+i][col].letter !== word[i]) return false;
+                    }
+                }
+                return true;
+            },
+
+            placeWord(word, row, col, isHorizontal) {
+                for (let i = 0; i < word.length; i++) {
+                    if (isHorizontal) {
+                        this.grid[row][col+i].letter = word[i];
+                    } else {
+                        this.grid[row+i][col].letter = word[i];
+                    }
+                }
+            },
+
+            getCellFromEvent(e) {
+                const target = e.target.closest('.grid-cell');
+                if (target) {
+                    return {
+                        row: parseInt(target.getAttribute('data-row')),
+                        col: parseInt(target.getAttribute('data-col'))
+                    };
+                }
+                return null;
+            },
+            
+            getCellFromTouch(e) {
+                const touch = e.touches[0];
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (element) {
+                    const target = element.closest('.grid-cell');
+                    if (target) {
+                        return {
+                            row: parseInt(target.getAttribute('data-row')),
+                            col: parseInt(target.getAttribute('data-col'))
+                        };
+                    }
+                }
+                return null;
+            },
+
+            startSelection(e) {
+                this.isDragging = true;
+                this.startCell = this.getCellFromEvent(e);
+                this.currentCell = this.startCell;
+                this.calculatePath();
+            },
+            
+            startSelectionTouch(e) {
+                this.isDragging = true;
+                this.startCell = this.getCellFromTouch(e);
+                this.currentCell = this.startCell;
+                this.calculatePath();
+            },
+
+            updateSelection(e) {
+                if (!this.isDragging) return;
+                const cell = this.getCellFromEvent(e);
+                if (cell && (cell.row !== this.currentCell?.row || cell.col !== this.currentCell?.col)) {
+                    this.currentCell = cell;
+                    this.calculatePath();
+                }
+            },
+            
+            updateSelectionTouch(e) {
+                if (!this.isDragging) return;
+                const cell = this.getCellFromTouch(e);
+                if (cell && (cell.row !== this.currentCell?.row || cell.col !== this.currentCell?.col)) {
+                    this.currentCell = cell;
+                    this.calculatePath();
+                }
+            },
+
+            calculatePath() {
+                if (!this.startCell || !this.currentCell) return;
+                this.selectedPath = [];
+                
+                const sr = this.startCell.row;
+                const sc = this.startCell.col;
+                const cr = this.currentCell.row;
+                const cc = this.currentCell.col;
+                
+                // Allow only horizontal or vertical
+                if (sr === cr) {
+                    const start = Math.min(sc, cc);
+                    const end = Math.max(sc, cc);
+                    for (let c = start; c <= end; c++) this.selectedPath.push({row: sr, col: c});
+                } else if (sc === cc) {
+                    const start = Math.min(sr, cr);
+                    const end = Math.max(sr, cr);
+                    for (let r = start; r <= end; r++) this.selectedPath.push({row: r, col: sc});
+                } else {
+                    // Invalid path, just select start
+                    this.selectedPath = [{row: sr, col: sc}];
+                }
+            },
+
+            isSelected(r, c) {
+                return this.selectedPath.some(p => p.row === r && p.col === c);
+            },
+
+            endSelection() {
+                if (!this.isDragging) return;
+                this.isDragging = false;
+                this.checkSelectedWord();
+                this.selectedPath = [];
+                this.startCell = null;
+                this.currentCell = null;
+            },
+
+            checkSelectedWord() {
+                if (this.selectedPath.length < 2) return;
+                
+                // Construct word forwards and backwards
+                let word1 = '';
+                let word2 = '';
+                
+                // Ensure ordered path for consistent checking
+                const sr = this.startCell.row;
+                const sc = this.startCell.col;
+                const cr = this.currentCell.row;
+                const cc = this.currentCell.col;
+                
+                let path = [];
+                if (sr === cr) {
+                     const step = sc <= cc ? 1 : -1;
+                     for(let c=sc; c!=cc+step; c+=step) path.push({row: sr, col: c});
+                } else if (sc === cc) {
+                     const step = sr <= cr ? 1 : -1;
+                     for(let r=sr; r!=cr+step; r+=step) path.push({row: r, col: sc});
+                }
+
+                if(path.length === 0) return;
+
+                word1 = path.map(p => this.grid[p.row][p.col].letter).join('');
+                word2 = word1.split('').reverse().join('');
+
+                const found1 = this.targetWords.includes(word1) && !this.foundWords.includes(word1) ? word1 : null;
+                const found2 = this.targetWords.includes(word2) && !this.foundWords.includes(word2) ? word2 : null;
+                
+                const found = found1 || found2;
+
+                if (found) {
+                    this.foundWords.push(found);
+                    path.forEach(p => this.grid[p.row][p.col].found = true);
+                    
+                    if (this.foundWords.length === this.targetWords.length) {
+                        this.endGame();
+                    }
+                }
+            },
+
+            async endGame() {
+                clearInterval(this.timer);
+                this.isPlaying = false;
+                
+                this.score = Math.max((this.foundWords.length * 50) - this.seconds, 100);
+                this.showResults = true;
+                
+                if (typeof window.saveGameScore === 'function') {
+                    await window.saveGameScore('puzzle', this.score, this.seconds);
+                }
+                if (typeof window.triggerConfetti === 'function') {
+                    window.triggerConfetti();
+                }
+            },
+
+            quitGame() {
+                clearInterval(this.timer);
+                this.isPlaying = false;
+                this.showResults = false;
+            }
+        }));
+    });
+</script>
+{% endblock %}

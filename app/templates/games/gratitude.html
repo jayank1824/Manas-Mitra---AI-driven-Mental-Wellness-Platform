@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Gratitude Journal - Manas Mitra{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 px-4" x-data="gratitudeJournal()">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-teal-800">📝 Gratitude Journal</h1>
+        <p class="text-teal-600 mt-2">Cultivate positivity by reflecting on good things</p>
+    </div>
+
+    <!-- Entry Form -->
+    <div x-show="!isSubmitted" class="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-orange-100 mb-8 transform transition-all">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+            Write 3 things you're grateful for today <span class="text-red-400">❤️</span>
+        </h2>
+        
+        <form @submit.prevent="submitEntries">
+            <div class="space-y-6 mb-8">
+                <div class="flex gap-4 items-start">
+                    <div class="bg-orange-100 text-orange-800 font-bold w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1">1</div>
+                    <textarea x-model="entries[0]" required rows="2" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 resize-none p-3 border" placeholder="I am grateful for..."></textarea>
+                </div>
+                
+                <div class="flex gap-4 items-start">
+                    <div class="bg-orange-100 text-orange-800 font-bold w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1">2</div>
+                    <textarea x-model="entries[1]" required rows="2" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 resize-none p-3 border" placeholder="I appreciate..."></textarea>
+                </div>
+                
+                <div class="flex gap-4 items-start">
+                    <div class="bg-orange-100 text-orange-800 font-bold w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1">3</div>
+                    <textarea x-model="entries[2]" required rows="2" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500 resize-none p-3 border" placeholder="Something good that happened today..."></textarea>
+                </div>
+            </div>
+            
+            <div class="mb-8 border-t pt-6">
+                <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">How are you feeling right now?</h3>
+                <div class="flex justify-between max-w-sm mx-auto">
+                    <template x-for="m in moods" :key="m.icon">
+                        <button type="button" @click="mood = m.icon" 
+                                :class="mood === m.icon ? 'bg-orange-100 transform scale-125' : 'hover:bg-gray-50 opacity-60 hover:opacity-100'"
+                                class="w-12 h-12 rounded-full flex items-center justify-center text-3xl transition-all duration-200 focus:outline-none">
+                            <span x-text="m.icon"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+            
+            <button type="submit" :disabled="isSubmitting" class="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors text-lg disabled:opacity-50 flex justify-center items-center">
+                <span x-show="!isSubmitting">Save Reflection</span>
+                <span x-show="isSubmitting">Saving...</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Success Screen -->
+    <div x-show="isSubmitted" class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-8 text-center border border-orange-200 mb-8" style="display: none;">
+        <div class="text-5xl mb-4">✨</div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Beautiful!</h2>
+        <p class="text-gray-600 mb-6 italic" x-text="quote"></p>
+        
+        <div class="bg-white/60 p-4 rounded-xl inline-block mb-6 shadow-sm">
+            <div class="text-sm text-gray-500 font-semibold uppercase tracking-wide mb-1">Points Earned</div>
+            <div class="text-3xl font-bold text-orange-600">+300</div>
+        </div>
+        
+        <div>
+            <button @click="resetForm()" class="text-orange-600 font-medium hover:text-orange-800 underline">Write another entry</button>
+        </div>
+    </div>
+
+    <!-- Timeline (Mocked for now) -->
+    <div class="mt-12">
+        <h3 class="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Recent Reflections</h3>
+        <div class="space-y-4 text-gray-500 text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            <p>Your previous gratitude entries will appear here.</p>
+            <p class="text-sm">Keep up the daily habit!</p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/games/game-utils.js"></script>
+<script>
+    const QUOTES = [
+        "Gratitude turns what we have into enough.",
+        "Acknowledging the good that you already have in your life is the foundation for all abundance.",
+        "Joy is the simplest form of gratitude.",
+        "When you arise in the morning, give thanks for the food and for the joy of living.",
+        "Gratitude is a powerful catalyst for happiness."
+    ];
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('gratitudeJournal', () => ({
+            entries: ['', '', ''],
+            moods: [
+                {icon: '😢', name: 'sad'},
+                {icon: '😞', name: 'down'},
+                {icon: '😐', name: 'neutral'},
+                {icon: '🙂', name: 'good'},
+                {icon: '😊', name: 'happy'}
+            ],
+            mood: '🙂',
+            isSubmitting: false,
+            isSubmitted: false,
+            quote: '',
+
+            async submitEntries() {
+                if (!this.entries[0] || !this.entries[1] || !this.entries[2]) return;
+                
+                this.isSubmitting = true;
+                
+                // Simulate save delay
+                await new Promise(r => setTimeout(r, 800));
+                
+                if (typeof window.saveGameScore === 'function') {
+                    // 100 points per entry
+                    await window.saveGameScore('gratitude', 300, 60);
+                }
+                
+                this.quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+                this.isSubmitting = false;
+                this.isSubmitted = true;
+                
+                if (typeof window.triggerConfetti === 'function') {
+                    window.triggerConfetti();
+                }
+            },
+
+            resetForm() {
+                this.entries = ['', '', ''];
+                this.mood = '🙂';
+                this.isSubmitted = false;
+            }
+        }));
+    });
+</script>
+{% endblock %}

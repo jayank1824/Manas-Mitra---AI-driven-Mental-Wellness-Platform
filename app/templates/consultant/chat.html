@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}AI Wellness Consultant{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Chat specific styles */
+    .chat-container {
+        height: calc(100vh - 250px);
+        min-height: 400px;
+    }
+    .typing-indicator span {
+        animation: blink 1.4s infinite both;
+        height: 8px;
+        width: 8px;
+        background: #9ca3af;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 1px;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+        0% { opacity: 0.2; }
+        20% { opacity: 1; }
+        100% { opacity: 0.2; }
+    }
+    /* Auto-resize textarea */
+    textarea { resize: none; overflow: hidden; min-height: 44px; max-height: 150px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 h-full flex flex-col">
+    <!-- Header -->
+    <div class="mb-4">
+        <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+            <span class="mr-3 text-4xl">🤖</span> AI Wellness Consultant
+        </h1>
+        <div class="mt-2 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Disclaimer:</strong> Dr. Manas is an AI assistant. For emergencies, please call 988 or your local crisis line immediately.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Card -->
+    <div class="bg-white rounded-xl shadow-lg border border-teal-100 flex-1 flex flex-col overflow-hidden">
+        
+        <!-- Chat History -->
+        <div id="chat-messages" class="chat-container flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-gray-50">
+            <!-- Messages will be injected here via JS -->
+            <div class="text-center text-gray-500 text-sm py-4">Loading conversation...</div>
+        </div>
+
+        <!-- Quick Suggestions -->
+        <div id="quick-suggestions" class="px-4 py-3 bg-white border-t border-gray-100 flex gap-2 overflow-x-auto whitespace-nowrap hidden">
+            <button class="suggestion-chip px-3 py-1.5 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-full text-sm transition-colors border border-teal-200">I'm feeling anxious</button>
+            <button class="suggestion-chip px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-full text-sm transition-colors border border-indigo-200">Help me sleep</button>
+            <button class="suggestion-chip px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-full text-sm transition-colors border border-rose-200">I feel lonely</button>
+            <button class="suggestion-chip px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-full text-sm transition-colors border border-emerald-200">Breathing exercise</button>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white border-t border-gray-200">
+            <div class="flex items-end space-x-2">
+                <button id="clear-chat-btn" class="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 transition-colors tooltip-trigger" title="Clear Chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+                
+                <div class="flex-1 relative">
+                    <textarea id="message-input" rows="1" 
+                              class="block w-full py-3 px-4 rounded-xl border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm bg-gray-50 focus:bg-white transition-colors"
+                              placeholder="Type your message here..."></textarea>
+                </div>
+                
+                <button id="send-button" class="inline-flex items-center justify-center p-3 border border-transparent rounded-xl shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform rotate-90" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-2 text-xs text-gray-400 text-center">
+                Press Enter to send, Shift+Enter for new line
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/chat.js"></script>
+{% endblock %}

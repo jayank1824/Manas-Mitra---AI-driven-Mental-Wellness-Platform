@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Focus Flow - Manas Mitra{% endblock %}
+
+{% block extra_head %}
+<style>
+    .game-area {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        background-color: #f0fdfa; /* teal-50 */
+        border-radius: 1rem;
+        overflow: hidden;
+        cursor: crosshair;
+        border: 2px solid #ccfbf1;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .target {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #5eead4, #0f766e);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transform: translate(-50%, -50%);
+        transition: transform 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .target:active {
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(45, 212, 191, 0.4);
+        transform: translate(-50%, -50%) scale(0);
+        animation: rippleAnim 0.6s linear;
+        pointer-events: none;
+    }
+
+    @keyframes rippleAnim {
+        to {
+            transform: translate(-50%, -50%) scale(3);
+            opacity: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4" x-data="focusGame()">
+    <div class="text-center mb-6">
+        <h1 class="text-3xl font-bold text-teal-800">🎯 Focus Flow</h1>
+        <p class="text-teal-600 mt-2">Improve concentration with reaction training</p>
+    </div>
+
+    <!-- Setup -->
+    <div x-show="!isPlaying && !showResults" class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto text-center border border-teal-100">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Select Difficulty</h2>
+        <div class="flex flex-col gap-4 mb-6">
+            <button @click="startGame('easy')" class="bg-teal-50 text-teal-700 hover:bg-teal-100 py-3 px-4 rounded-lg font-medium transition-colors">Easy (Large, Slower)</button>
+            <button @click="startGame('medium')" class="bg-teal-50 text-teal-700 hover:bg-teal-100 py-3 px-4 rounded-lg font-medium transition-colors">Medium (Normal)</button>
+            <button @click="startGame('hard')" class="bg-teal-50 text-teal-700 hover:bg-teal-100 py-3 px-4 rounded-lg font-medium transition-colors">Hard (Small, Fast)</button>
+        </div>
+        <p class="text-sm text-gray-500">Click the targets as fast as they appear. You have 30 seconds!</p>
+    </div>
+
+    <!-- Play Area -->
+    <div x-show="isPlaying" class="bg-white rounded-xl shadow-lg p-6 border border-teal-100" style="display: none;">
+        <div class="flex justify-between items-center mb-4">
+            <div class="bg-teal-50 px-4 py-2 rounded-lg font-bold text-teal-800">
+                Hits: <span x-text="hits"></span>
+            </div>
+            
+            <div class="flex-grow mx-6">
+                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-teal-500 transition-all duration-1000 linear" :style="`width: ${(timeLeft/30)*100}%`"></div>
+                </div>
+            </div>
+            
+            <div class="bg-teal-50 px-4 py-2 rounded-lg font-bold text-teal-800">
+                <span x-text="timeLeft"></span>s
+            </div>
+        </div>
+
+        <div class="game-area" id="gameArea" @mousedown="missClick($event)" @touchstart.prevent="missClick($event)">
+            <template x-if="targetVisible">
+                <div class="target cursor-pointer" 
+                     :style="`width: ${targetSize}px; height: ${targetSize}px; left: ${targetX}px; top: ${targetY}px;`"
+                     @mousedown.stop="hitTarget($event)"
+                     @touchstart.prevent.stop="hitTargetTouch($event)">
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div x-show="showResults" class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto text-center border border-teal-100" style="display: none;">
+        <div class="text-5xl mb-4">🏆</div>
+        <h2 class="text-2xl font-bold text-teal-900 mb-6">Session Complete!</h2>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-teal-50 p-3 rounded-lg">
+                <div class="text-xs text-teal-600 uppercase tracking-wide font-semibold">Targets Hit</div>
+                <div class="text-2xl font-bold text-teal-900" x-text="hits"></div>
+            </div>
+            <div class="bg-teal-50 p-3 rounded-lg">
+                <div class="text-xs text-teal-600 uppercase tracking-wide font-semibold">Accuracy</div>
+                <div class="text-2xl font-bold text-teal-900" x-text="accuracy + '%'"></div>
+            </div>
+            <div class="bg-teal-50 p-3 rounded-lg">
+                <div class="text-xs text-teal-600 uppercase tracking-wide font-semibold">Avg Reaction</div>
+                <div class="text-2xl font-bold text-teal-900"><span x-text="avgTime"></span><span class="text-sm font-normal">ms</span></div>
+            </div>
+            <div class="bg-teal-50 p-3 rounded-lg">
+                <div class="text-xs text-teal-600 uppercase tracking-wide font-semibold">Best Time</div>
+                <div class="text-2xl font-bold text-teal-900"><span x-text="bestTime"></span><span class="text-sm font-normal">ms</span></div>
+            </div>
+        </div>
+        
+        <div class="text-2xl font-bold text-teal-700 mb-8 bg-teal-100 p-4 rounded-xl">
+            Score: <span x-text="score"></span>
+        </div>
+
+        <button @click="showResults = false" class="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">
+            Play Again
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/games/game-utils.js"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('focusGame', () => ({
+            isPlaying: false,
+            showResults: false,
+            difficulty: 'easy',
+            
+            timeLeft: 30,
+            gameTimer: null,
+            targetTimer: null,
+            
+            targetVisible: false,
+            targetSize: 80,
+            targetX: 0,
+            targetY: 0,
+            targetTimeout: 2000,
+            
+            hits: 0,
+            clicks: 0,
+            reactionTimes: [],
+            targetSpawnTime: 0,
+            
+            // Computed for results
+            score: 0,
+            accuracy: 0,
+            avgTime: 0,
+            bestTime: 0,
+
+            startGame(diff) {
+                this.difficulty = diff;
+                if (diff === 'easy') { this.targetSize = 80; this.targetTimeout = 2000; }
+                else if (diff === 'medium') { this.targetSize = 50; this.targetTimeout = 1500; }
+                else if (diff === 'hard') { this.targetSize = 30; this.targetTimeout = 1000; }
+                
+                this.hits = 0;
+                this.clicks = 0;
+                this.reactionTimes = [];
+                this.timeLeft = 30;
+                
+                this.isPlaying = true;
+                this.showResults = false;
+                
+                this.gameTimer = setInterval(() => {
+                    this.timeLeft--;
+                    if (this.timeLeft <= 0) this.endGame();
+                }, 1000);
+                
+                this.spawnTarget();
+            },
+
+            spawnTarget() {
+                if (!this.isPlaying) return;
+                
+                const area = document.getElementById('gameArea');
+                if (!area) return;
+                
+                const padding = this.targetSize / 2;
+                const maxX = area.clientWidth - this.targetSize;
+                const maxY = area.clientHeight - this.targetSize;
+                
+                this.targetX = padding + Math.random() * maxX;
+                this.targetY = padding + Math.random() * maxY;
+                this.targetVisible = true;
+                this.targetSpawnTime = performance.now();
+                
+                clearTimeout(this.targetTimer);
+                this.targetTimer = setTimeout(() => {
+                    this.targetVisible = false;
+                    setTimeout(() => this.spawnTarget(), 100);
+                }, this.targetTimeout);
+            },
+
+            createRipple(x, y) {
+                const area = document.getElementById('gameArea');
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple';
+                ripple.style.width = this.targetSize + 'px';
+                ripple.style.height = this.targetSize + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                area.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            },
+
+            hitTarget(e) {
+                this.registerHit(e.clientX, e.clientY, e.currentTarget);
+            },
+            
+            hitTargetTouch(e) {
+                const touch = e.touches[0];
+                this.registerHit(touch.clientX, touch.clientY, e.currentTarget);
+            },
+            
+            registerHit(clientX, clientY, targetEl) {
+                if (!this.targetVisible) return;
+                
+                const rect = document.getElementById('gameArea').getBoundingClientRect();
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+                
+                this.createRipple(x, y);
+                
+                const reactionTime = performance.now() - this.targetSpawnTime;
+                this.reactionTimes.push(reactionTime);
+                
+                this.hits++;
+                this.clicks++;
+                this.targetVisible = false;
+                clearTimeout(this.targetTimer);
+                
+                setTimeout(() => this.spawnTarget(), 100);
+            },
+
+            missClick(e) {
+                if (e.target.classList.contains('target')) return; // handled by hitTarget
+                this.clicks++;
+            },
+
+            async endGame() {
+                clearInterval(this.gameTimer);
+                clearTimeout(this.targetTimer);
+                this.isPlaying = false;
+                this.targetVisible = false;
+                
+                this.accuracy = this.clicks > 0 ? Math.round((this.hits / this.clicks) * 100) : 0;
+                
+                if (this.reactionTimes.length > 0) {
+                    const sum = this.reactionTimes.reduce((a, b) => a + b, 0);
+                    this.avgTime = Math.round(sum / this.reactionTimes.length);
+                    this.bestTime = Math.round(Math.min(...this.reactionTimes));
+                } else {
+                    this.avgTime = 0;
+                    this.bestTime = 0;
+                }
+                
+                // Score calc: base points for hits, bonus for speed and accuracy
+                let speedBonus = this.avgTime > 0 ? Math.max(0, 2000 - this.avgTime) : 0;
+                this.score = Math.round((this.hits * 10) + (speedBonus * (this.accuracy/100)));
+                
+                this.showResults = true;
+                
+                if (typeof window.saveGameScore === 'function' && this.score > 0) {
+                    await window.saveGameScore('focus', this.score, 30);
+                }
+                if (typeof window.triggerConfetti === 'function') {
+                    window.triggerConfetti();
+                }
+            }
+        }));
+    });
+</script>
+{% endblock %}
